@@ -1,0 +1,750 @@
+---
+title: "R-code for 'TITLE OF MANUSCRIPT'"
+author: "NAMES OF AUTHORS"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE, tidy=TRUE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In order to repeat analyses presented in this document, the following packages are required. 
+
+```{r packages, message=F, warning=F}
+## Load packages
+## -----------------------------------------------------------------------------
+easypackages::libraries(
+  "tidyverse", "lme4", "chron", "patchwork",
+  "magrittr", "readr", "EnvStats", "sjPlot", "egg") 
+```
+
+## Loading raw datasets
+
+* `Malarone experiment`
+
+Experimental study comprising data from 297 nestlings that were either treated with Malarone or water. An additional subset comprises individuals that received no treatment and were therefore only exposed to repeated routine sampling and handling. 
+
+
+```{r data, echo = TRUE, warning=FALSE}
+## Read and format raw data: (saved raw data with "." as decimal operator)
+## -----------------------------------------------------------------------------
+malarone.data <- readr::read_delim(
+  file = 'data/malarone_tolerance2.csv', delim = ",", col_types = "ffffffffnnnnffnnfninniffni") %>% 
+  mutate(Date = chron(as.character(Date), format="d/m/y")) %>% 
+  mutate(Diff_Inf_Class = factor(Diff_Inf_Class, levels=c("Uninfected","Increase","Stable","Decrease"))) %>% 
+  mutate(Treatment_pwater = factor(Treatment_pwater, levels=c("Control","Water","Malarone"))) %>% 
+  ## Scaling continuous variables
+  mutate(delta_body_condition = scale((body_condition - body_condition_T0))) %>% 
+  mutate(body_condition = scale(body_condition)) %>% 
+  mutate(body_condition_T0 = scale(body_condition_T0)) %>% 
+  mutate(Growth_rate = scale(Growth_rate)) %>% 
+  mutate(Sex = factor(
+    Sex,
+    levels = c(0, 1),
+    labels = c("Female", "Male"))) %>% 
+  filter(., !is.na(Treatment_pwater))
+```
+
+
+* `Bloodchemistry data`
+
+Dataset on blood chemistry values for 11 individuals of the `Malarone experiment` prior and after treatment. Additionally, blood chemistry values for another 60 individuals that were not part of the `Malarone experiment`.
+
+
+```{r}
+bloodchem.data <- readr::read_csv(file = "data/bloodchemistry_data.csv") %>% 
+  mutate(Ring = as.character(Ring)) %>% 
+  mutate(Treatment = factor(Treatment,
+                            levels = c("Pre-Control", "Post-Control", "Pre-Mal", "Post-Mal"))) %>% 
+  mutate(doy = lubridate::yday(Date)) 
+names(bloodchem.data)[names(bloodchem.data) == "Lprev"] <- "Leucocytozoon"
+
+## Some gGT values are at boundaries, set those to 5
+## -----------------------------------------------------------------------------
+bloodchem.data$GGT[bloodchem.data$GGT == "<5"] <- 5
+bloodchem.data$GGT <- as.numeric(bloodchem.data$GGT)
+
+## Summarise sample sizes
+## -----------------------------------------------------------------------------
+pander::pandoc.table(table(bloodchem.data$Treatment))
+```
+
+## Analyses
+### `Experimental data`
+#### Treatment effects on body condition 
+
+First, visualising raw data 
+
+```{r} 
+g1_t1 <- ggplot(malarone.data)+
+  aes(Treatment_pwater, body_condition_T0) +
+  geom_hline(yintercept = mean(malarone.data$body_condition_T0, na.rm=T), linetype = "dashed") +
+  geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3, na.rm = T)+
+  geom_jitter(color='lightgrey', width = 0.2, height = 0, na.rm = T) +
+  stat_n_text(na.rm = T, y.pos = -Inf, vjust = -1)+
+  labs(x="", y="Std. body condition index")+
+  stat_summary(fun=mean, colour = c("#1F78B4", "#33A02C", "#FF7F00"), geom="errorbar", 
+               size=1.5 , width=0.05, show.legend = FALSE, 
+               fun.max = function(x) mean(x) + sd(x),
+               fun.min = function(x) mean(x) - sd(x), na.rm = T) +
+  stat_summary(fun=mean, colour = c("#1F78B4", "#33A02C", "#FF7F00"), geom="point", 
+               size=5 ,show.legend = FALSE, na.rm = T) + 
+  theme_article() +
+  theme(legend.position="none",
+        axis.line.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "cm")) +
+  scale_y_continuous(limits = c(-4.5, 4.75), breaks = seq(-4, 4, 1)) +
+  ggtitle("1st sampling")
+
+
+g1_t2 <- ggplot(malarone.data)+
+  aes(Treatment_pwater,body_condition)+
+  geom_hline(yintercept = mean(malarone.data$body_condition, na.rm=T), linetype = "dashed")+
+  geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3, na.rm = T)+
+  geom_jitter(color='lightgrey', width = 0.2, height = 0, na.rm = T) +
+  stat_n_text(na.rm = T, y.pos = -Inf, vjust = -1)+
+  labs(x="", y="Std. body condition index")+
+  stat_summary(fun=mean, colour = c("#1F78B4", "#33A02C", "#FF7F00"), geom="errorbar", 
+               size=1.5 , width=0.05, show.legend = FALSE, 
+               fun.max = function(x) mean(x) + sd(x),
+               fun.min = function(x) mean(x) - sd(x), na.rm = T)+
+  stat_summary(fun=mean, colour = c("#1F78B4", "#33A02C", "#FF7F00"), geom="point", 
+               size=5 ,show.legend = FALSE, na.rm = T)+ 
+  theme_article() +
+  theme(legend.position="none",
+        axis.line.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "cm")) +
+  scale_y_continuous(limits = c(-4.5, 4.75), breaks = seq(-4, 4, 1)) +
+  ggtitle("2nd sampling")
+
+g1_delta <- ggplot(malarone.data)+
+  aes(Treatment_pwater,delta_body_condition)+
+  geom_hline(yintercept = mean(malarone.data$delta_body_condition, na.rm=T), linetype = "dashed")+
+  geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3, na.rm = T)+
+  geom_jitter(color='lightgrey', width = 0.2, height = 0, na.rm = T) +
+  stat_n_text(na.rm = T, y.pos = -Inf, vjust = -1)+
+  labs(x="", y="\U0394 Std. body condition index")+
+  stat_summary(fun=mean, colour = c("#1F78B4", "#33A02C", "#FF7F00"), geom="errorbar", 
+               size=1.5 , width=0.05, show.legend = FALSE, 
+               fun.max = function(x) mean(x) + sd(x),
+               fun.min = function(x) mean(x) - sd(x), na.rm = T)+
+  stat_summary(fun=mean, colour = c("#1F78B4", "#33A02C", "#FF7F00"), geom="point", 
+               size=5 ,show.legend = FALSE, na.rm = T)+ 
+  theme_article() +
+  theme(legend.position="none",
+        axis.line.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "cm")) +
+  scale_y_continuous(limits = c(-4.5, 4.75), breaks = seq(-4, 4, 1)) +
+  ggtitle("\U0394 BCI")
+
+g1_t1 + g1_t2 + g1_delta + plot_annotation(tag_levels = 'A')& 
+  theme(plot.tag = element_text(size = 14))
+```
+
+As shown above, there was some heterogeneity among treatment in the mean body condition index before treatment. Therefore, we used the change in body condition ($\Delta (2nd~sample - 1st~sample$)  
+
+```{r}
+## Run LMM
+## -----------------------------------------------------------------------------
+model.bci <- lmer(delta_body_condition ~ Treatment_pwater + Age_in_days + Year + (1|Nest),
+                  data = malarone.data)
+
+## Check model assumptions
+## -----------------------------------------------------------------------------
+performance::check_model(model.bci)
+performance::model_performance(model.bci)
+
+## Estimate contrasts using tukey post-hoc test
+## -----------------------------------------------------------------------------
+contrasts <- 
+  emmeans::contrast(lsmeans::lsmeans(model.bci, "Treatment_pwater"), 'tukey') %>%
+  broom::tidy()
+
+## print contrasts
+## --------------------------------------------------------------------------
+pander::pandoc.table(contrasts[,c("contrast", "estimate", "std.error", "adj.p.value")])
+
+## Predicted values for each treatment
+## -----------------------------------------------------------------------------
+pred.bci <- get_model_data(model.bci, type = 'pred', terms = "Treatment_pwater") %>% 
+  mutate(x = factor(x = c("Control","Water","Malarone"), levels = c("Control","Water","Malarone")))
+
+## Plot:
+## 1.) predictions and corresponding error margins
+## 2.) indicate significant differences based on tukey contrasts
+## 3.) Jitter not fitting as corrected for considerable among-year variation
+## -----------------------------------------------------------------------------
+g1_pred_delta <- ggplot(pred.bci, aes(x = x, y = predicted)) +
+  geom_hline(yintercept = mean(pred.bci$predicted, na.rm = T), linetype = "dashed")+
+  stat_n_text(data = malarone.data, aes(Treatment_pwater, body_condition), na.rm = T, y.pos = -Inf, vjust = - 1) +
+  labs(x = "", y = "\U0394 std. body condition index")+
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), colour = 'black', size = 1.5, width = .1) +
+  geom_errorbar(aes(ymin = predicted - std.error, ymax = predicted + std.error) ,
+                size = 8, colour = c("#1F78B4", "#33A02C", "#FF7F00"), width = 0) +
+  geom_point(color ="black", size = 2) +
+  scale_y_continuous(breaks = seq(-0.2, 0.8, 0.1)) +
+  theme_article() + 
+  theme(legend.position="none",
+        axis.line.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "cm")) +
+  geom_segment(size = .8, aes(
+    x = "Control", xend = "Water",
+    y = pred.bci$conf.high[pred.bci$x == "Control"] + 0.02,
+    yend = pred.bci$conf.high[pred.bci$x == "Control"] + 0.02)) +
+  geom_text(aes(
+    x = 1.5, y = pred.bci$conf.high[pred.bci$x == "Control"] + 0.03),
+    vjust = 0, label = round(contrasts$adj.p.value[1], 3), size = 4.5) +
+  geom_segment(size = .8, aes(
+    x = "Control",
+    xend = "Malarone", 
+    y = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.07,
+    yend = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.07)) +
+  geom_text(aes(
+    x = 2,
+    y = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.08),
+    vjust = 0, label = round(contrasts$adj.p.value[2], 3), size = 4.5) +
+  geom_segment(size = .8, aes(
+    x = "Water", xend = "Malarone",
+    y = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.02,
+    yend = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.02)) +
+  geom_text(aes(
+    x = 2.5, 
+    y = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.03),
+    vjust = 0, label = round(contrasts$adj.p.value[3], 3), size = 4.5)
+```
+
+
+#### Growth rate between control and malarone treated nestlings
+
+Visualising the raw data
+
+```{r} 
+g2_water <- ggplot(malarone.data, aes(Treatment_pwater, Growth_rate)) +
+  geom_hline(yintercept = mean(malarone.data$Growth_rate, na.rm = T), linetype = "dashed")+
+  geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3, na.rm = T)+
+  geom_jitter(color='lightgrey', width = 0.2, height = 0, na.rm = T)+
+  stat_n_text(na.rm = T, y.pos = -Inf, vjust = -1) +
+  labs(x="", y="Std. growth rate")+
+  stat_summary(fun=mean, colour = c("#1F78B4", "#33A02C", "#FF7F00"), geom="errorbar", 
+               size=1.5 , width=0.05, show.legend = FALSE, 
+               fun.max = function(x) mean(x) + sd(x),
+               fun.min = function(x) mean(x) - sd(x), na.rm = T)+
+  stat_summary(fun=mean, colour = c("#1F78B4", "#33A02C", "#FF7F00"), geom="point", 
+               size=5 ,show.legend = FALSE, na.rm = T) + 
+  theme_article()+
+  theme(legend.position="none",
+        axis.line.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "cm"))
+```
+
+Modelling treatment effects while controlling for age and year-specific variation
+
+```{r model rm2 breathing to Infection_intensity after}
+## Here, scaling is IMPORTANT
+lmer_gr_treat <- lmerTest::lmer(Growth_rate ~ Treatment_pwater + Age_in_days + Sex + Year + (1|Nest),
+                                data = malarone.data)
+
+## Check model assumptions: okayish
+## -----------------------------------------------------------------------------
+performance::check_model(lmer_gr_treat)
+performance::model_performance(lmer_gr_treat)
+
+## Estimate contrasts using tukey post-hoc test
+## -----------------------------------------------------------------------------
+contrasts <- 
+  emmeans::contrast(lsmeans::lsmeans(lmer_gr_treat, "Treatment_pwater"), 'tukey') %>%
+  broom::tidy()
+
+pander::pandoc.table(contrasts[,c("contrast", "estimate", "std.error", "adj.p.value")])
+
+modplot_growth_rate_treat=plot_model(lmer_gr_treat,
+                                     sort.est = T,
+                                     transform = NULL,
+                                     title = "",
+                                     show.values = TRUE, 
+                                     value.offset = .3,
+                                     ci.lvl = .95,
+                                     ci.style = "whisker",
+                                     dot.size = 3,
+                                     line.size = 1.2) +
+  theme_article() +
+  theme(axis.title=element_text(size=14),
+        plot.title = element_text(size = 11, face="bold"),
+        axis.title.y = element_blank())+
+  geom_hline(yintercept = 0, lty = "dashed") +
+  ylab("Effect size") + xlab("Model parameter") +
+  ggtitle(label = "Std. growth rate")
+
+## Predicted values for each treatment
+## -----------------------------------------------------------------------------
+mod_gr <- get_model_data(lmer_gr_treat,type='pred',terms="Treatment_pwater") %>% 
+   mutate(x = factor(c("Control","Water","Malarone"), levels = c("Control","Water","Malarone")))
+
+(g2_pred <- ggplot(mod_gr, aes(x = x, y = predicted)) +
+    geom_hline(yintercept = mean(mod_gr$predicted, na.rm = T), linetype = "dashed") +
+    stat_n_text(data = malarone.data, aes(Treatment_pwater, Growth_rate),
+                y.pos = -Inf, vjust = -1, na.rm = T) +
+    labs(x="", y="Std. growth rate")+
+    geom_errorbar(aes(ymin = conf.low, ymax = conf.high), colour = 'black', size = 1.5, width = .1)+
+    geom_errorbar(aes(ymin = predicted - std.error , ymax = predicted + std.error),
+                  size = 8, colour = c("#1F78B4", "#33A02C", "#FF7F00"), width = 0)+
+    geom_point(color ="black", size = 2)+
+    theme_article()+
+    theme(legend.position="none", 
+          axis.line.x = element_blank(), 
+          axis.ticks.x = element_blank(),
+          plot.margin = margin(0, 0, 0, 0, "cm"))  +
+    scale_y_continuous(breaks = seq(-0.2, 0.5, 0.1)) +
+    ## Control - Water
+    geom_segment(size = .8, aes(
+      x = "Control", xend = "Water",
+      y = mod_gr$conf.high[pred.bci$x == "Control"] + 0.01,
+      yend = mod_gr$conf.high[pred.bci$x == "Control"] + 0.01)) +
+    geom_text(aes(
+      x = 1.5, y = mod_gr$conf.high[pred.bci$x == "Control"] + 0.02),
+      vjust = 0, label = round(contrasts$adj.p.value[1], 3), size = 4.5) +
+    ## Control - Malarone
+    geom_segment(size = .8, aes(
+      x = "Control",
+      xend = "Malarone", 
+      y = mod_gr$conf.high[pred.bci$x == "Control"] + 0.04,
+      yend = mod_gr$conf.high[pred.bci$x == "Control"] + 0.04)) +
+    geom_text(aes(
+      x = 2,
+      y = mod_gr$conf.high[pred.bci$x == "Control"] + 0.05),
+      vjust = 0, label = round(contrasts$adj.p.value[2], 3), size = 4.5) +
+    geom_segment(size = .8, aes(
+      x = "Water", xend = "Malarone",
+      y = mod_gr$conf.high[pred.bci$x == "Malarone"] + 0.02,
+      yend = mod_gr$conf.high[pred.bci$x == "Malarone"] + 0.02)) +
+    geom_text(aes(
+      x = 2.5, 
+      y = mod_gr$conf.high[pred.bci$x == "Malarone"] + 0.03),
+      vjust = 0, label = round(contrasts$adj.p.value[3], 3), size = 4.5))
+```
+
+### `Bloodchemistry`
+#### Comparing parameter distributions among groups
+
+First, visualising raw data 
+
+```{r, warning=FALSE, message=FALSE, results='hide'}
+## A: Age
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(Age),
+            SD = sd(Age),
+            LCL = quantile(Age, 0.025),
+            UCL = quantile(Age, 0.975))
+A <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = Age),
+              height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data,
+            aes(y = Age, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "A") +
+  scale_y_continuous(breaks = seq(15, 40, 5)) +
+  ylab("Nestling age\n(days)")
+
+## B: Body condition index
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(BCI),
+            SD = sd(BCI),
+            LCL = quantile(BCI, 0.025),
+            UCL = quantile(BCI, 0.975))
+B <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = BCI), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = BCI, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "B") +
+  scale_y_continuous(breaks = seq(-100, 200, 50)) +
+  ylab("Body condition index\n")
+
+## C: Leucocytozoon
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(Leucocytozoon),
+            SD = sd(Leucocytozoon),
+            LCL = quantile(Leucocytozoon, 0.025),
+            UCL = quantile(Leucocytozoon, 0.975))
+C <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = Leucocytozoon), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = Leucocytozoon, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "C") +
+  scale_y_continuous(breaks = seq(0, 4, 1)) +
+  ylab("Leucocytozoon\ninfection intensity")
+
+## D: AP
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(AP),
+            SD = sd(AP),
+            LCL = quantile(AP, 0.025),
+            UCL = quantile(AP, 0.975))
+D <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = AP), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = AP, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "D") +
+  ylab("AP\n(U/I)")
+
+## E: AST
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(AST),
+            SD = sd(AST),
+            LCL = quantile(AST, 0.025),
+            UCL = quantile(AST, 0.975))
+E <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = AST), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = AST, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "E") +
+  ylab("AST\n(U/I)")
+
+
+## F: GGT
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(GGT),
+            SD = sd(GGT),
+            LCL = quantile(GGT, 0.025),
+            UCL = quantile(GGT, 0.975))
+F <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = GGT), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = GGT, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "F") +
+  ylab("GGT\n(U/I)")
+
+## G: BuChE
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(BuChE),
+            SD = sd(BuChE),
+            LCL = quantile(BuChE, 0.025),
+            UCL = quantile(BuChE, 0.975))
+G <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = BuChE), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = BuChE, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "G") +
+  ylab("BuChE\n(KU/I)")
+
+## H: BA
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(BA),
+            SD = sd(BA),
+            LCL = quantile(BA, 0.025),
+            UCL = quantile(BA, 0.975))
+H <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = BA), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = BA, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "H") +
+  ylab("BA\n(µmol/L)")
+
+## I: LDH
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(LDH),
+            SD = sd(LDH),
+            LCL = quantile(LDH, 0.025),
+            UCL = quantile(LDH, 0.975))
+I <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = LDH), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = LDH, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "I") +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  ylab("LDH\n(U/I)")
+
+## J: CK
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(CK),
+            SD = sd(CK),
+            LCL = quantile(CK, 0.025),
+            UCL = quantile(CK, 0.975))
+J <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = CK), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = CK, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "J") +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  ylab("CK\n(U/I)")
+
+## K: ALB
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(ALB),
+            SD = sd(ALB),
+            LCL = quantile(ALB, 0.025),
+            UCL = quantile(ALB, 0.975))
+K <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = ALB), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = ALB, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "K") +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  ylab("ALB\n(g/L)")
+
+## L: TP
+## -----------------------------------------------------------------------------
+means <- bloodchem.data %>% 
+  group_by(Treatment) %>%
+  summarise(MEAN = mean(TP),
+            SD = sd(TP),
+            LCL = quantile(TP, 0.025),
+            UCL = quantile(TP, 0.975))
+L <-
+  ggplot(means, aes(x = Treatment, y = MEAN)) +
+  theme_article(base_size = 10) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank()) +
+  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+                width = 0, size = 4) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
+                width = 0, size = 1) +
+  geom_point(size = 2) +
+  geom_jitter(data = bloodchem.data, aes(y = TP), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+  geom_line(data = bloodchem.data, aes(y = TP, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "L") +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  ylab("TP\n(g/L)")
+```
+
+
+#### Testing for among group differences
+
+Data are not normally distributed, and thus all group comparisons are performed using non-parametric tests, i.e., Wilcoxon signed rank test for paired data and Mann-Whitney test for unpaired data.
+
+The following function is defined to estimate these statatitstic for all parameters:
+
+```{r}
+## function to compute paired and unpaired tests
+## -----------------------------------------------------------------------------
+u_test <- function(var = NULL, x_name = "Post-Mal", y_name = "Post-Control", 
+                   paired = FALSE) {
+  
+  ## Get data of groups to compare
+  ## ---------------------------------------------------------------------------
+  x <- bloodchem.data[[var]][bloodchem.data$Treatment == x_name]
+  y <- bloodchem.data[[var]][bloodchem.data$Treatment == y_name]
+  
+  ## Run test and retrun results  
+  ## ---------------------------------------------------------------------------
+  u <- wilcox.test(x, y, paired = paired)
+  
+  return(data.frame(parameter = var, 
+                    group_x = x_name,
+                    group_y = y_name,
+                    U_value = u$statistic,
+                    p_value = u$p.value))
+}
+```
+
+Apply the function to all comparisons of interest
+
+```{r, warning=FALSE}
+## Unpaired tests 
+## -----------------------------------------------------------------------------
+u_tests <- rbind(
+  ## 1.) Pre-Control vs Pre-Mal, unpaired 
+  lapply(names(bloodchem.data)[c(4:7, 9:13)], u_test, 
+         x_name = "Pre-Control", y_name = "Pre-Mal") %>% 
+    do.call("rbind",.) %>%
+    mutate(p_value_adj = p.adjust(p_value, method = "BH")),
+  ## 2.) Post-Control vs Post-Mal, unpaired
+  lapply(names(bloodchem.data)[c(4:7, 9:13)], u_test, 
+         x_name = "Post-Control", y_name = "Post-Mal") %>% 
+    do.call("rbind",.) %>%
+    mutate(p_value_adj = p.adjust(p_value, method = "BH"))
+)
+write.csv(u_tests, file = "data/u_tests.csv")
+knitr::knit_print(u_tests)
+
+## Paired tests
+## -----------------------------------------------------------------------------
+w_tests <- lapply(names(bloodchem.data)[c(4:7, 9:13)], u_test, paired = T,
+                  x_name = "Pre-Mal", y_name = "Post-Mal") %>% 
+  do.call("rbind",.) %>%
+  mutate(p_value_adj = p.adjust(p_value, method = "BH"))
+knitr::knit_print(w_tests)
+```
+
+## Summary
+### Model table
+
+```{r, warning=FALSE, message=FALSE}
+sjPlot::tab_model(
+  model.bci,lmer_gr_treat,
+  show.ci50 = T ,
+  show.stat = T,
+  show.reflvl = T,
+  string.stat = "t",
+  p.val = "kr",
+  dv.labels = c("Std. body condition","Std. growth rate"))
+```
+
+### Multiplots
+
+```{r}
+## Malarone experiment
+## -----------------------------------------------------------------------------
+g1_pred_delta + g2_pred + plot_annotation(tag_levels = 'A')& 
+  theme(plot.tag = element_text(size = 16, face = "bold"))
+ggsave(filename = "figures/MalaroneMultiplot.png", device = "png", dpi = 300,
+       width = 9, height = 6, units = "in")
+
+## Bloodchemistry data
+## -----------------------------------------------------------------------------
+A + B + C + D + E + F + G + H + I + J + K + L
+ggsave(filename = "figures/BloodChemistryMultiplot.png", device = "png", dpi = 300,
+       width = 9, height = 6, units = "in")
+```
