@@ -1,0 +1,274 @@
+---
+title: "antimalarial drug tolerance in buzzard"
+author: "Tony Rinaud"
+date: "20/09/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Required packages
+
+```{r packages, message=F, warning=F}
+setwd("C://Users/Tony/Documents/Phd Bielefeld/Data manip/Fieldwork_2019/Results/")
+
+library(easypackages)
+libraries('plotly','ggplot2','Hmisc','ggalt','plyr','chron','dplyr','stringr','tidyr','FSA','grid','gridExtra','ggsci','lme4','RVAideMemoire','lsmeans','MuMIn','EnvStats','devtools','RColorBrewer','tidyverse','brms','tidybayes','patchwork','pdftools','osmdata','rgdal','magrittr','purrr','forcats','modelr','ggstance','ggridges','cowplot','ggrepel','gganimate','ggridges','rptR','rdwd','sjPlot','sjlabelled','sjmisc','wesanderson', "ggpubr","ggsignif","ggdist")
+
+# Routine clean-up upon start
+rm(list=ls())
+
+theme_set(theme_tidybayes() + panel_border())
+
+```
+
+```{r data, echo=F}
+
+## Data source
+
+data2016_2020=read.csv2('C:/Users/Tony/Documents/Phd Bielefeld/Manuscripts/Tolerance to malarone in buzzard/malarone_tolerance.csv', h=T)
+
+data2016_2020$Nest=as.factor(data2016_2020$Nest)
+data2016_2020$Ind_Year=as.factor(data2016_2020$Ind_Year)
+data2016_2020$Date=chron(as.character(data2016_2020$Date), format="d/m/y")
+data2016_2020$ID_sample=as.factor(data2016_2020$ID_sample)
+data2016_2020$Infection_intensity=as.factor(data2016_2020$Infection_intensity)
+data2016_2020$Prevalence=as.factor(data2016_2020$Prevalence)
+data2016_2020$Breathing_rate=as.numeric(data2016_2020$Breathing_rate)
+data2016_2020$Sex=as.factor(data2016_2020$Sex)
+data2016_2020$Sampling_rank=as.factor(data2016_2020$Sampling_rank)
+data2016_2020$Weight_g=as.numeric(data2016_2020$Weight_g)
+data2016_2020$Wing_cm=as.numeric(data2016_2020$Wing_cm)
+data2016_2020$Tarsus_mm=as.numeric(data2016_2020$Tarsus_mm)
+data2016_2020$body_temperature=as.numeric(data2016_2020$body_temperature)
+data2016_2020$Ambient_Temperature_AvgC=as.numeric(data2016_2020$Ambient_Temperature_AvgC)
+data2016_2020$Sampling_rank=as.factor(data2016_2020$Sampling_rank)
+data2016_2020$Treatment=as.factor(data2016_2020$Treatment)
+data2016_2020$Year=as.factor(data2016_2020$Year)
+data2016_2020$Ring_no=as.factor(data2016_2020$Ring_no)
+data2016_2020$body_condition=as.numeric(data2016_2020$body_condition)
+data2016_2020$body_condition_T0=as.numeric(data2016_2020$body_condition_T0)
+
+data2016_2020$Diff_Inf_Class=factor(data2016_2020$Diff_Inf_Class, levels=c("Uninfected","Increase","Stable","Decrease"))
+data2016_2020=arrange(data2016_2020,data2016_2020$Diff_Inf_Class)
+
+data2016_2020$Treatment_pwater=factor(data2016_2020$Treatment_pwater, levels=c("Control","Water","Malarone"))
+data2016_2020=arrange(data2016_2020,data2016_2020$Treatment_pwater)
+
+
+```
+
+# Body condition between control and water and malarone treated nestlings
+```{r} 
+
+data1=subset(data2016_2020,!is.na(data2016_2020$Treatment))
+
+g1=ggplot(data1)+
+  aes(Treatment,body_condition)+
+  geom_jitter(color='lightgrey')+
+  geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3)+
+  geom_hline(yintercept = mean(data1$body_condition, na.rm=T), linetype = "dashed")+
+  stat_n_text()+
+  # scale_y_continuous(breaks=pretty(c(10,60), n=6), limits = c(5,60))+
+  labs(x="", y="Body condition")+
+  stat_summary(fun=mean, colour=wes_palette("Zissou1",2), geom="errorbar", 
+               size=1.5 , width=0.05, show.legend = FALSE, 
+               fun.max = function(x) mean(x) + sd(x),
+               fun.min = function(x) mean(x) - sd(x))+
+  stat_summary(fun=mean, colour=wes_palette("Zissou1",2), geom="point", 
+               size=5 ,show.legend = FALSE)+ 
+  theme_classic()+
+  theme(legend.position="none", axis.title=element_text(size=14),  axis.text=element_text(size=12), axis.line.x = element_blank(), axis.ticks.x = element_blank(), plot.margin = margin(0, 0, 0, 0, "cm"), plot.title = element_text(hjust = 0.5, face="bold"))
+
+data1_water=subset(data2016_2020,!is.na(data2016_2020$Treatment_pwater))
+
+g1_water=ggplot(data1_water)+
+  aes(Treatment_pwater,body_condition)+
+  geom_jitter(color='lightgrey')+
+  geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3)+
+  geom_hline(yintercept = mean(data1_water$body_condition, na.rm=T), linetype = "dashed")+
+  stat_n_text()+
+  # scale_y_continuous(breaks=pretty(c(10,60), n=6), limits = c(5,60))+
+  labs(x="", y="Body condition")+
+  stat_summary(fun=mean, colour=wes_palette("Zissou1",3), geom="errorbar", 
+               size=1.5 , width=0.05, show.legend = FALSE, 
+               fun.max = function(x) mean(x) + sd(x),
+               fun.min = function(x) mean(x) - sd(x))+
+  stat_summary(fun=mean, colour=wes_palette("Zissou1",3), geom="point", 
+               size=5 ,show.legend = FALSE)+ 
+  theme_classic()+
+  theme(legend.position="none", axis.title=element_text(size=14),  axis.text=element_text(size=12), axis.line.x = element_blank(), axis.ticks.x = element_blank(), plot.margin = margin(0, 0, 0, 0, "cm"), plot.title = element_text(hjust = 0.5, face="bold"))
+
+```
+
+```{r model rm2 breathing to Infection_intensity after}
+
+lmer_bc_treat=lmer(data= data2016_2020, body_condition~Treatment_pwater+Age_in_days+Year+(1|Nest))
+
+# summary(lmer_bc_treat)
+
+car::Anova(lmer_bc_treat)
+
+ls_bc_treat=lsmeans::lsmeans(lmer_bc_treat, ~Year)
+
+modplot_breathing_rate=plot_model(lmer_bc_treat,
+          sort.est = T,
+          transform = NULL,
+          title = "",
+          show.values = TRUE, 
+          value.offset = .3,
+          # axis.labels = rev(c("Infection status (Stable) : Treatment (Malarone)","Infection status (Increase) : Treatment (Malarone)","Uninfected", "Increased parasitemia", "Infection status (Decrease) : Treatment (Malarone)","Age (days)","Weight (g)","Stable infection","Year (2019)","Ambient temperature","Year (2018)","Sex (Male)", "Infection status (Uninfected) * Treatment (Malarone)","Year (2020)")),
+          ci.lvl = .95,
+          ci.style = "whisker",
+          dot.size = 3,
+          line.size = 1.2,
+  ) +
+  theme_classic(base_size = 14)+
+  theme(axis.title=element_text(size=14), plot.title = element_text(size = 11, face="bold"), axis.title.y = element_blank())+
+  geom_hline(yintercept = 0, lty = "dashed") +
+  ylab("Effect size") + xlab("Model parameter") +
+  ggtitle(label = "Body condition") 
+
+# Predicted values for each treatment
+
+mod_bc=get_model_data(lmer_bc_treat,type='pred',terms="Treatment_pwater")
+mod_bc$x=c("Control","Water","Malarone")
+
+g1_pred=ggplot(mod_bc)+
+  aes(mod_bc$x,mod_bc$predicted)+
+  geom_hline(yintercept = mean(mod_bc$predicted, na.rm=T), linetype = "dashed")+
+  # geom_jitter(data = data1_water, aes(Treatment_pwater,body_condition),col='grey', size=0.8)+
+  stat_n_text(data = data1_water, aes(Treatment_pwater,body_condition),y.pos=50)+
+  labs(x="", y="Body condition")+
+  geom_errorbar(aes(ymin=mod_bc$conf.low,ymax=mod_bc$conf.high),colour='black',size=1.5, width=.1)+
+  geom_errorbar(aes(ymin=mod_bc$predicted-mod_bc$std.error,ymax=mod_bc$predicted+mod_bc$std.error),size=8,colour=wes_palette("Zissou1",3), width=0)+
+  geom_point(color ="black", size=2)+
+  theme_classic()+
+  theme(legend.position="none", axis.title=element_text(size=14),  axis.text=element_text(size=12), axis.line.x = element_blank(), axis.ticks.x = element_blank(), plot.margin = margin(0, 0, 0, 0, "cm"), plot.title = element_text(hjust = 0.5, face="bold"))+
+  geom_segment(size = .8,
+                 aes(x="Water", y=28, xend="Malarone", yend=28))+
+    geom_text(aes(x=2.5, y=32),
+              label="0.06", size = 4.5) +
+    geom_segment(size = .8,
+                 aes(x="Control", y=36, xend="Malarone", yend=36))+
+    geom_text(aes(x=2, y=40),
+              label="*", size = 8)
+
+```
+
+# Growth rate between control and malarone treated nestlings
+```{r} 
+
+g2=ggplot(data1)+
+  aes(Treatment,Growth_rate)+
+  geom_jitter(color='lightgrey')+
+  geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3)+
+  geom_hline(yintercept = mean(data1$Growth_rate, na.rm=T), linetype = "dashed")+
+  stat_n_text()+
+  # scale_y_continuous(breaks=pretty(c(10,60), n=6), limits = c(5,60))+
+  labs(x="", y="Growth rate")+
+  stat_summary(fun=mean, colour=wes_palette("Zissou1",2), geom="errorbar", 
+               size=1.5 , width=0.05, show.legend = FALSE, 
+               fun.max = function(x) mean(x) + sd(x),
+               fun.min = function(x) mean(x) - sd(x))+
+  stat_summary(fun=mean, colour=wes_palette("Zissou1",2), geom="point", 
+               size=5 ,show.legend = FALSE)+ 
+  theme_classic()+
+  theme(legend.position="none", axis.title=element_text(size=14),  axis.text=element_text(size=12), axis.line.x = element_blank(), axis.ticks.x = element_blank(), plot.margin = margin(0, 0, 0, 0, "cm"), plot.title = element_text(hjust = 0.5, face="bold"))
+
+g2_water=ggplot(data1_water)+
+  aes(Treatment_pwater,Growth_rate)+
+  geom_jitter(color='lightgrey')+
+  geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3)+
+  geom_hline(yintercept = mean(data1_water$Growth_rate, na.rm=T), linetype = "dashed")+
+  stat_n_text()+
+  # scale_y_continuous(breaks=pretty(c(10,60), n=6), limits = c(5,60))+
+  labs(x="", y="Growth rate")+
+  stat_summary(fun=mean, colour=wes_palette("Zissou1",3), geom="errorbar", 
+               size=1.5 , width=0.05, show.legend = FALSE, 
+               fun.max = function(x) mean(x) + sd(x),
+               fun.min = function(x) mean(x) - sd(x))+
+  stat_summary(fun=mean, colour=wes_palette("Zissou1",3), geom="point", 
+               size=5 ,show.legend = FALSE)+ 
+  theme_classic()+
+  theme(legend.position="none", axis.title=element_text(size=14),  axis.text=element_text(size=12), axis.line.x = element_blank(), axis.ticks.x = element_blank(), plot.margin = margin(0, 0, 0, 0, "cm"), plot.title = element_text(hjust = 0.5, face="bold"))
+
+
+```
+
+```{r model rm2 breathing to Infection_intensity after}
+
+lmer_gr_treat=lmer(data=data2016_2020, Growth_rate~Treatment_pwater+Age_in_days+Sex+Year+(1|Nest))
+
+# summary(lmer_gr_treat)
+
+car::Anova(lmer_gr_treat)
+
+ls_gr_treat=lsmeans::lsmeans(lmer_gr_treat, ~Treatment_pwater)
+
+modplot_growth_rate_treat=plot_model(lmer_gr_treat,
+          sort.est = T,
+          transform = NULL,
+          title = "",
+          show.values = TRUE, 
+          value.offset = .3,
+          # axis.labels = rev(c("Infection status (Stable) : Treatment (Malarone)","Infection status (Increase) : Treatment (Malarone)","Uninfected", "Increased parasitemia", "Infection status (Decrease) : Treatment (Malarone)","Age (days)","Weight (g)","Stable infection","Year (2019)","Ambient temperature","Year (2018)","Sex (Male)", "Infection status (Uninfected) * Treatment (Malarone)","Year (2020)")),
+          ci.lvl = .95,
+          ci.style = "whisker",
+          dot.size = 3,
+          line.size = 1.2,
+  ) +
+  theme_classic(base_size = 14)+
+  theme(axis.title=element_text(size=14), plot.title = element_text(size = 11, face="bold"), axis.title.y = element_blank())+
+  geom_hline(yintercept = 0, lty = "dashed") +
+  ylab("Effect size") + xlab("Model parameter") +
+  ggtitle(label = "Growth rate") 
+
+# Predicted values for each treatment
+
+mod_gr=get_model_data(lmer_gr_treat,type='pred',terms="Treatment_pwater")
+mod_gr$x=c("Control","Water","Malarone")
+
+g2_pred=ggplot(mod_gr)+
+  aes(mod_gr$x,mod_gr$predicted)+
+  geom_hline(yintercept = mean(mod_gr$predicted, na.rm=T), linetype = "dashed")+
+  # geom_jitter(data = data1_water, aes(Treatment_pwater,Growth_rate),col='grey', size=0.8)+
+  stat_n_text(data = data1_water, aes(Treatment_pwater,Growth_rate),y.pos=0.06)+
+  labs(x="", y="Growth rate")+
+  geom_errorbar(aes(ymin=mod_gr$conf.low,ymax=mod_gr$conf.high),colour='black',size=1.5, width=.1)+
+  geom_errorbar(aes(ymin=mod_gr$predicted-mod_gr$std.error,ymax=mod_gr$predicted+mod_gr$std.error),size=8,colour=wes_palette("Zissou1",3), width=0,)+
+  geom_point(color ="black", size=2)+
+  theme_classic()+
+  theme(legend.position="none", axis.title=element_text(size=14),  axis.text=element_text(size=12), axis.line.x = element_blank(), axis.ticks.x = element_blank(), plot.margin = margin(0, 0, 0, 0, "cm"), plot.title = element_text(hjust = 0.5, face="bold"))+
+  geom_segment(size = .8,
+                 aes(x="Control", y=0.056, xend="Water", yend=0.056))+
+  geom_segment(size = .8,
+                 aes(x="Water", y=0.056, xend="Malarone", yend=0.056))+
+    geom_text(aes(x=2, y=0.057),
+              label="n.s.", size = 5)
+
+```
+
+# Summary models
+
+```{r}
+
+g1+g2+ plot_annotation(tag_levels = 'A')& 
+  theme(plot.tag = element_text(size = 16, face = "bold"))
+
+g1_pred+g2_pred + plot_annotation(tag_levels = 'A')& 
+  theme(plot.tag = element_text(size = 16, face = "bold"))
+
+sjPlot::tab_model(lmer_bc_treat,lmer_gr_treat,
+                  show.ci50 = T ,
+                  show.stat = T,
+                  show.reflvl = T,
+                  string.stat = "t",
+                  p.val = "kr",
+                  pred.labels = c("Intercept","Age (days)","Sex [Males]","Treatment [Control]","Treatment [Water]","Treatment [Malarone]", "Year [2018]", "Year [2019]","Year [2020]"),
+                  dv.labels = c("Body condition","Growth rate"),
+                  file = "C://Users/Tony/Documents/Phd Bielefeld/Manuscripts/Tolerance to malarone in buzzard/Table_results_lmer_cond_rate_p.val_kr.html")
+
+```
