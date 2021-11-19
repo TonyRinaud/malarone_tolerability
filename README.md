@@ -1,7 +1,10 @@
-# malarone_tolerability
+## Tolerance of common buzzard *Buteo buteo* nestlings to Malarone treatment (*in preparation*)
+___
 
-Comparison of body condition and growth rate among nestlings treated with either malarone, water or as control (no treatment)
+This repository contains: 
 
-## 1) raw data of the 299 individuals included in this analysis 
+* `R_code.rmd`: Documentation of all analyses
+* `data`: Folder containing raw data files and 
+* `figures`: Figures created by running the analysis script.
 
-## 2) rmd including script for graphs showing observed and predicted data among treatments. Also linear models testing for treatment differences.
+___
