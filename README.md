@@ -1,6 +1,6 @@
 # malarone_tolerability
 
-Comparison of body condition and growth rate differences among nestlings treated with either malarone, water or as control (no treatment)
+Comparison of body condition and growth rate among nestlings treated with either malarone, water or as control (no treatment)
 
 ## 1) raw data of the 299 individuals included in this analysis 
 
