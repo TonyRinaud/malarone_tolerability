@@ -24,48 +24,29 @@ easypackages::libraries(
 
 * `Malarone experiment`
 
-**Changes to the dataset should be these:**
-
-1.) Raw measures for both time points (e.g., wing_t0, wing_t1), including wing, body mass, body condition, infection status (?)  
-2.) Not needed are body and ambient temperature, breathing rate ...
-
-
-Experimental study comprising data from 297 nestlings that were either treated with Malarone or water. An additional subset comprises individuals that received no treatment and were therefore only exposed to repeated routine sampling and handling. 
+Experimental study comprising data from 299 nestlings that were either treated with Malarone or water. An additional subset comprises individuals that received no treatment and were therefore only exposed to repeated routine sampling and handling. 
 
 
 ```{r data, echo = TRUE, warning=FALSE}
 ## Read and format raw data: (saved raw data with "." as decimal operator)
 ## -----------------------------------------------------------------------------
 malarone.data <- readr::read_delim(
-  file = 'data/malarone_tolerance2.csv', delim = ",", col_types = "ffffffffnnnnffnnfninniffni") %>% 
-  mutate(Date = chron(as.character(Date), format="d/m/y")) %>% 
-  mutate(Diff_Inf_Class = factor(Diff_Inf_Class, levels=c("Uninfected","Increase","Stable","Decrease"))) %>% 
-  mutate(Treatment_pwater = factor(Treatment_pwater, levels=c("Control","Water","Malarone"))) %>% 
+  file = 'data/malarone_tolerability.csv', delim = ",", col_types = "fffffffinnnnnnnnnnnffff") %>% 
+  mutate(Treatment = factor(Treatment, levels=c("Control","Water","Malarone"))) %>% 
   ## Scaling continuous variables
-  mutate(delta_body_condition = scale((body_condition - body_condition_T0))) %>% 
-  mutate(body_condition = scale(body_condition)) %>% 
-  mutate(body_condition_T0 = scale(body_condition_T0)) %>% 
- # mutate(Growth_rate = scale(Growth_rate)) %>% 
-  mutate(Sex = factor(
-    Sex,
-    levels = c(0, 1),
-    labels = c("Female", "Male"))) %>% 
-  filter(., !is.na(Treatment_pwater))
+  mutate(delta_body_condition = scale(delta_body_condition)) %>% 
+  mutate(body_condition.1 = scale(body_condition.1)) %>% 
+  mutate(body_condition.2 = scale(body_condition.2)) %>% 
+  mutate(growth_rate = scale(growth_rate))
 ```
 
-
-### Sanity checks:
-
-For many variables, cases with NA values should not exist! For example:
+Summarise dataset:
 
 ```{r}
-any(is.na(malarone.data$weight_T0))
-any(is.na(malarone.data$Weight_g))
-any(is.na(malarone.data$weight_T0))
-any(is.na(malarone.data$Weight_g))
-any(is.na(malarone.data$days_resample))
-
-quantile(malarone.data$days_resample, na.rm = T)
+table(malarone.data$Year)
+table(malarone.data$Treatment)
+quantile(malarone.data$avg_age)
+quantile(malarone.data$days_resample)
 ```
 
 
@@ -103,8 +84,8 @@ First, visualising raw data
 
 ```{r} 
 g1_t1 <- ggplot(malarone.data)+
-  aes(Treatment_pwater, body_condition_T0) +
-  geom_hline(yintercept = mean(malarone.data$body_condition_T0, na.rm=T), linetype = "dashed") +
+  aes(Treatment, body_condition.1) +
+  geom_hline(yintercept = mean(malarone.data$body_condition.1, na.rm=T), linetype = "dashed") +
   geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3, na.rm = T)+
   geom_jitter(color='lightgrey', width = 0.2, height = 0, na.rm = T) +
   stat_n_text(na.rm = T, y.pos = -Inf, vjust = -1)+
@@ -125,8 +106,8 @@ g1_t1 <- ggplot(malarone.data)+
 
 
 g1_t2 <- ggplot(malarone.data)+
-  aes(Treatment_pwater,body_condition)+
-  geom_hline(yintercept = mean(malarone.data$body_condition, na.rm=T), linetype = "dashed")+
+  aes(Treatment, body_condition.2)+
+  geom_hline(yintercept = mean(malarone.data$body_condition.2, na.rm=T), linetype = "dashed")+
   geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3, na.rm = T)+
   geom_jitter(color='lightgrey', width = 0.2, height = 0, na.rm = T) +
   stat_n_text(na.rm = T, y.pos = -Inf, vjust = -1)+
@@ -146,7 +127,7 @@ g1_t2 <- ggplot(malarone.data)+
   ggtitle("2nd sampling")
 
 g1_delta <- ggplot(malarone.data)+
-  aes(Treatment_pwater,delta_body_condition)+
+  aes(Treatment,delta_body_condition)+
   geom_hline(yintercept = mean(malarone.data$delta_body_condition, na.rm=T), linetype = "dashed")+
   geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3, na.rm = T)+
   geom_jitter(color='lightgrey', width = 0.2, height = 0, na.rm = T) +
@@ -175,28 +156,29 @@ As shown above, there was some heterogeneity among treatment in the mean body co
 ```{r}
 ## Run LMM
 ## -----------------------------------------------------------------------------
-model.bci <- lmer(delta_body_condition ~ Treatment_pwater + Age_in_days + Year + (1|Nest),
+model.bci <- lmerTest::lmer(delta_body_condition ~ Treatment + avg_age + days_resample + Year + (1|Nest),
                   data = malarone.data)
+
+## Summarise model
+## -----------------------------------------------------------------------------
+summary.model <- summary(model.bci)[["coefficients"]]
+pander::pandoc.table(summary.model)
 
 ## Check model assumptions
 ## -----------------------------------------------------------------------------
 performance::check_model(model.bci)
 performance::model_performance(model.bci)
 
-## Estimate contrasts using tukey post-hoc test
-## -----------------------------------------------------------------------------
-contrasts <- 
-  emmeans::contrast(lsmeans::lsmeans(model.bci, "Treatment_pwater"), 'tukey') %>%
-  broom::tidy()
-
-## print contrasts
-## --------------------------------------------------------------------------
-pander::pandoc.table(contrasts[,c("contrast", "estimate", "std.error", "adj.p.value")])
-
 ## Predicted values for each treatment
 ## -----------------------------------------------------------------------------
-pred.bci <- get_model_data(model.bci, type = 'pred', terms = "Treatment_pwater") %>% 
+pred.bci <- get_model_data(model.bci, type = 'pred', terms = "Treatment") %>% 
   mutate(x = factor(x = c("Control","Water","Malarone"), levels = c("Control","Water","Malarone")))
+
+## add sample size to labels
+## -----------------------------------------------------------------------------
+n <- table(malarone.data$Treatment[!is.na(malarone.data$delta_body_condition)])
+pred.bci <- pred.bci %>% 
+  mutate(x = paste0(x,"\nn=",n))
 
 ## Plot:
 ## 1.) predictions and corresponding error margins
@@ -204,55 +186,29 @@ pred.bci <- get_model_data(model.bci, type = 'pred', terms = "Treatment_pwater")
 ## 3.) Jitter not fitting as corrected for considerable among-year variation
 ## -----------------------------------------------------------------------------
 g1_pred_delta <- ggplot(pred.bci, aes(x = x, y = predicted)) +
-  geom_hline(yintercept = mean(pred.bci$predicted, na.rm = T), linetype = "dashed")+
-  stat_n_text(data = malarone.data, aes(Treatment_pwater, body_condition), na.rm = T, y.pos = -Inf, vjust = - 1) +
-  labs(x = "", y = "\U0394 std. body condition index")+
+  # geom_hline(yintercept = mean(pred.bci$predicted, na.rm = T), linetype = "dashed")+
+  labs(x = "", y = "std. \U0394 body condition index")+
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), colour = 'black', size = 1.5, width = .1) +
   geom_errorbar(aes(ymin = predicted - std.error, ymax = predicted + std.error) ,
                 size = 8, colour = c("#1F78B4", "#33A02C", "#FF7F00"), width = 0) +
   geom_point(color ="black", size = 2) +
-  scale_y_continuous(breaks = seq(-0.2, 0.8, 0.1)) +
+  scale_y_continuous(breaks = seq(0, 0.6, 0.1), limits = c(-0.06, 0.64)) +
   theme_article() + 
   theme(legend.position="none",
         axis.line.x = element_blank(),
         axis.ticks.x = element_blank(),
-        plot.margin = margin(0, 0, 0, 0, "cm")) +
-  geom_segment(size = .8, aes(
-    x = "Control", xend = "Water",
-    y = pred.bci$conf.high[pred.bci$x == "Control"] + 0.02,
-    yend = pred.bci$conf.high[pred.bci$x == "Control"] + 0.02)) +
-  geom_text(aes(
-    x = 1.5, y = pred.bci$conf.high[pred.bci$x == "Control"] + 0.03),
-    vjust = 0, label = round(contrasts$adj.p.value[1], 3), size = 4.5) +
-  geom_segment(size = .8, aes(
-    x = "Control",
-    xend = "Malarone", 
-    y = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.07,
-    yend = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.07)) +
-  geom_text(aes(
-    x = 2,
-    y = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.08),
-    vjust = 0, label = round(contrasts$adj.p.value[2], 3), size = 4.5) +
-  geom_segment(size = .8, aes(
-    x = "Water", xend = "Malarone",
-    y = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.02,
-    yend = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.02)) +
-  geom_text(aes(
-    x = 2.5, 
-    y = pred.bci$conf.high[pred.bci$x == "Malarone"] + 0.03),
-    vjust = 0, label = round(contrasts$adj.p.value[3], 3), size = 4.5)
+        plot.margin = margin(0, 0, 0, 0, "cm"))
 ```
 
 
 #### Growth rate between control and malarone treated nestlings
 
-*Note, this variable should be a daily growth rate, i.e., gain in body mass in grams per day. However measures seem to tiny for that*
 
 Visualising the raw data
 
 ```{r} 
-g2_water <- ggplot(malarone.data, aes(Treatment_pwater, Growth_rate)) +
-  geom_hline(yintercept = mean(malarone.data$Growth_rate, na.rm = T), linetype = "dashed")+
+g2_water <- ggplot(malarone.data, aes(Treatment, growth_rate)) +
+  geom_hline(yintercept = mean(malarone.data$growth_rate, na.rm = T), linetype = "dashed")+
   geom_boxplot(color ="black", outlier.shape = NA, size=.5, width=.3, na.rm = T)+
   geom_jitter(color='lightgrey', width = 0.2, height = 0, na.rm = T)+
   stat_n_text(na.rm = T, y.pos = -Inf, vjust = -1) +
@@ -274,49 +230,33 @@ Modelling treatment effects while controlling for age and year-specific variatio
 
 ```{r model rm2 breathing to Infection_intensity after}
 ## Here, scaling is IMPORTANT
-lmer_gr_treat <- lmerTest::lmer(Growth_rate ~ Treatment_pwater + Age_in_days + Sex + Year + (1|Nest),
+lmer_gr_treat <- lmerTest::lmer(growth_rate ~ Treatment + avg_age + days_resample + Sex + Year + (1|Nest),
                                 data = malarone.data)
+
+## Summarise model
+## -----------------------------------------------------------------------------
+summary.model <- summary(lmer_gr_treat)[["coefficients"]]
+pander::pandoc.table(summary.model)
+
 
 ## Check model assumptions: okayish
 ## -----------------------------------------------------------------------------
 performance::check_model(lmer_gr_treat)
 performance::model_performance(lmer_gr_treat)
 
-## Estimate contrasts using tukey post-hoc test
-## -----------------------------------------------------------------------------
-contrasts <- 
-  emmeans::contrast(lsmeans::lsmeans(lmer_gr_treat, "Treatment_pwater"), 'tukey') %>%
-  broom::tidy()
-
-pander::pandoc.table(contrasts[,c("contrast", "estimate", "std.error", "adj.p.value")])
-
-modplot_growth_rate_treat=plot_model(lmer_gr_treat,
-                                     sort.est = T,
-                                     transform = NULL,
-                                     title = "",
-                                     show.values = TRUE, 
-                                     value.offset = .3,
-                                     ci.lvl = .95,
-                                     ci.style = "whisker",
-                                     dot.size = 3,
-                                     line.size = 1.2) +
-  theme_article() +
-  theme(axis.title=element_text(size=14),
-        plot.title = element_text(size = 11, face="bold"),
-        axis.title.y = element_blank())+
-  geom_hline(yintercept = 0, lty = "dashed") +
-  ylab("Effect size") + xlab("Model parameter") +
-  ggtitle(label = "Std. growth rate")
-
 ## Predicted values for each treatment
 ## -----------------------------------------------------------------------------
-mod_gr <- get_model_data(lmer_gr_treat,type='pred',terms="Treatment_pwater") %>% 
+mod_gr <- get_model_data(lmer_gr_treat,type='pred',terms="Treatment") %>% 
    mutate(x = factor(c("Control","Water","Malarone"), levels = c("Control","Water","Malarone")))
 
-(g2_pred <- ggplot(mod_gr, aes(x = x, y = predicted)) +
-    geom_hline(yintercept = mean(mod_gr$predicted, na.rm = T), linetype = "dashed") +
-    stat_n_text(data = malarone.data, aes(Treatment_pwater, Growth_rate),
-                y.pos = -Inf, vjust = -1, na.rm = T) +
+## add sample size to labels
+## -----------------------------------------------------------------------------
+n <- table(malarone.data$Treatment[!is.na(malarone.data$growth_rate)])
+mod_gr <- mod_gr %>% 
+  mutate(x = paste0(x,"\nn=",n))
+
+g2_pred <- ggplot(mod_gr, aes(x = x, y = predicted)) +
+    # geom_hline(yintercept = mean(mod_gr$predicted, na.rm = T), linetype = "dashed") +
     labs(x="", y="Std. growth rate")+
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high), colour = 'black', size = 1.5, width = .1)+
     geom_errorbar(aes(ymin = predicted - std.error , ymax = predicted + std.error),
@@ -327,33 +267,7 @@ mod_gr <- get_model_data(lmer_gr_treat,type='pred',terms="Treatment_pwater") %>%
           axis.line.x = element_blank(), 
           axis.ticks.x = element_blank(),
           plot.margin = margin(0, 0, 0, 0, "cm"))  +
-    scale_y_continuous(breaks = seq(-0.2, 0.5, 0.1)) +
-    ## Control - Water
-    geom_segment(size = .8, aes(
-      x = "Control", xend = "Water",
-      y = mod_gr$conf.high[pred.bci$x == "Control"] + 0.01,
-      yend = mod_gr$conf.high[pred.bci$x == "Control"] + 0.01)) +
-    geom_text(aes(
-      x = 1.5, y = mod_gr$conf.high[pred.bci$x == "Control"] + 0.02),
-      vjust = 0, label = round(contrasts$adj.p.value[1], 3), size = 4.5) +
-    ## Control - Malarone
-    geom_segment(size = .8, aes(
-      x = "Control",
-      xend = "Malarone", 
-      y = mod_gr$conf.high[pred.bci$x == "Control"] + 0.04,
-      yend = mod_gr$conf.high[pred.bci$x == "Control"] + 0.04)) +
-    geom_text(aes(
-      x = 2,
-      y = mod_gr$conf.high[pred.bci$x == "Control"] + 0.05),
-      vjust = 0, label = round(contrasts$adj.p.value[2], 3), size = 4.5) +
-    geom_segment(size = .8, aes(
-      x = "Water", xend = "Malarone",
-      y = mod_gr$conf.high[pred.bci$x == "Malarone"] + 0.02,
-      yend = mod_gr$conf.high[pred.bci$x == "Malarone"] + 0.02)) +
-    geom_text(aes(
-      x = 2.5, 
-      y = mod_gr$conf.high[pred.bci$x == "Malarone"] + 0.03),
-      vjust = 0, label = round(contrasts$adj.p.value[3], 3), size = 4.5))
+  scale_y_continuous(breaks = seq(0, 0.6, 0.1), limits = c(-0.06, 0.64))
 ```
 
 ### `Bloodchemistry`
