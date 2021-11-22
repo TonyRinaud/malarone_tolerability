@@ -145,6 +145,60 @@ ring_list %>% select(-c(Treatm, Sex.guess ,Sex..1.male.0.fem., Age)) -> ring_lis
 
 # saving full and second sample only tables
 
+
+# Mon Nov 22 18:35:58 2021 ------------------------------
+# Use: write.csv2(..., dec = ".") to save numbers with decimal points!
+
 # write.csv2(ring_list, 'Phd Bielefeld/Manuscripts/Tolerance to malarone in buzzard/malarone_tolerability.csv')
 
 # write.csv2(ring_list[ring_list$sampling_rank %in% 2,], 'Phd Bielefeld/Manuscripts/Tolerance to malarone in buzzard/malarone_tolerability_resamples_only.csv')
+
+
+################################################################################
+################################################################################
+################################################################################
+
+## saved as txt file with "," replaced by "."
+## -----------------------------------------------------------------------------
+malarone.data <- readr::read_delim(
+  file = 'data/malarone_tolerability.txt', delim = ";")
+
+## condense data to long-format
+## -----------------------------------------------------------------------------
+library(tidyverse)
+
+## Resampling data
+## -----------------------------------------------------------------------------
+long.2 <- filter(malarone.data, sampling_rank == 2) %>% 
+  mutate(Date.2 = Date) %>% 
+  mutate(Lprev.2 = Lprev) %>% 
+  mutate(Lbinom.2 = Lbinom) %>% 
+  mutate(Weight.2 = Weight) %>% 
+  mutate(Wing.2 = Wing) %>% 
+  mutate(body_condition.2 = body_condition) %>% 
+  mutate(Age.2 = Age_in_days) %>% 
+  subset(., select = -c(Date, Lprev, Lbinom, Weight, body_condition, Age_in_days, Wing))
+
+## First sampling 
+## -----------------------------------------------------------------------------
+long.1 <- filter(malarone.data, sampling_rank == 1) %>% 
+  mutate(Date.1 = Date) %>% 
+  mutate(Lprev.1 = Lprev) %>% 
+  mutate(Lbinom.1 = Lbinom) %>% 
+  mutate(Weight.1 = Weight) %>% 
+  mutate(Wing.1 = Wing) %>% 
+  mutate(body_condition.1 = body_condition) %>% 
+  mutate(Age.1 = Age_in_days) %>% 
+  subset(., select = c(Date.1, Lprev.1, Lbinom.1, Weight.1, body_condition.1, Age.1, Wing.1))
+
+merged <- cbind(long.1, long.2)
+merged <- merged[,c(
+  "Ring.no", "Year", "sex", "Treatments", "Nest",
+  "Date.1", "Date.2", "days_resample", "Age.1", "Age.2", "avg_age",
+  "Weight.1", "Weight.2", "Wing.1", "Wing.2", "growth_rate",
+  "body_condition.1", "body_condition.2", "delta_body_condition", 
+  "Lprev.1", "Lprev.2", "Lbinom.1", "Lbinom.2"
+)]
+
+names(merged)[c(1,3,4)] <- c("Ring", "Sex", "Treatment")
+readr::write_excel_csv(merged, file = "data/malarone_tolerability.csv")
