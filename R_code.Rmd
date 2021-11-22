@@ -24,6 +24,12 @@ easypackages::libraries(
 
 * `Malarone experiment`
 
+**Changes to the dataset should be these:**
+
+1.) Raw measures for both time points (e.g., wing_t0, wing_t1), including wing, body mass, body condition, infection status (?)  
+2.) Not needed are body and ambient temperature, breathing rate ...
+
+
 Experimental study comprising data from 297 nestlings that were either treated with Malarone or water. An additional subset comprises individuals that received no treatment and were therefore only exposed to repeated routine sampling and handling. 
 
 
@@ -39,12 +45,27 @@ malarone.data <- readr::read_delim(
   mutate(delta_body_condition = scale((body_condition - body_condition_T0))) %>% 
   mutate(body_condition = scale(body_condition)) %>% 
   mutate(body_condition_T0 = scale(body_condition_T0)) %>% 
-  mutate(Growth_rate = scale(Growth_rate)) %>% 
+ # mutate(Growth_rate = scale(Growth_rate)) %>% 
   mutate(Sex = factor(
     Sex,
     levels = c(0, 1),
     labels = c("Female", "Male"))) %>% 
   filter(., !is.na(Treatment_pwater))
+```
+
+
+### Sanity checks:
+
+For many variables, cases with NA values should not exist! For example:
+
+```{r}
+any(is.na(malarone.data$weight_T0))
+any(is.na(malarone.data$Weight_g))
+any(is.na(malarone.data$weight_T0))
+any(is.na(malarone.data$Weight_g))
+any(is.na(malarone.data$days_resample))
+
+quantile(malarone.data$days_resample, na.rm = T)
 ```
 
 
@@ -73,6 +94,9 @@ pander::pandoc.table(table(bloodchem.data$Treatment))
 
 ## Analyses
 ### `Experimental data`
+
+**We should consider variable intervals between sampling events! Age_ind_days does not account for this, nor is it clear if treatment effects would need time to show up** 
+
 #### Treatment effects on body condition 
 
 First, visualising raw data 
@@ -221,6 +245,8 @@ g1_pred_delta <- ggplot(pred.bci, aes(x = x, y = predicted)) +
 
 
 #### Growth rate between control and malarone treated nestlings
+
+*Note, this variable should be a daily growth rate, i.e., gain in body mass in grams per day. However measures seem to tiny for that*
 
 Visualising the raw data
 
@@ -664,7 +690,7 @@ L <-
 
 Data are not normally distributed, and thus all group comparisons are performed using non-parametric tests, i.e., Wilcoxon signed rank test for paired data and Mann-Whitney test for unpaired data.
 
-The following function is defined to estimate these statatitstic for all parameters:
+The following function is defined to estimate these statistics for all parameters:
 
 ```{r}
 ## function to compute paired and unpaired tests
