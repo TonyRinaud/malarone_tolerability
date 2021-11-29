@@ -15,11 +15,12 @@ This document provides all the `R code` used in our paper. Both the Rmarkdown fi
 In order to repeat analyses presented in this document, the following packages are required. 
 
 ```{r packages, message=F, warning=F}
+
 ## Load packages
 ## -----------------------------------------------------------------------------
 easypackages::libraries(
   "tidyverse", "lme4", "chron", "patchwork",
-  "magrittr", "readr", "EnvStats", "sjPlot", "egg") 
+  "magrittr", "readr", "EnvStats", "sjPlot", "egg","ggplot2","dplyr") 
 ```
 
 ## Loading raw datasets
@@ -33,7 +34,7 @@ Experimental study comprising data from 299 nestlings that were either treated w
 ## Read and format raw data: (saved raw data with "." as decimal operator)
 ## -----------------------------------------------------------------------------
 malarone.data <- readr::read_delim(
-  file = 'data/malarone_tolerability.csv', delim = ",", col_types = "fffffffinnnnnnnnnnnffff") %>% 
+  file = 'data/malarone_tolerability.csv', delim = ";", col_types = "fffffffinnnnnnnnnnnffff") %>% 
   mutate(Treatment = factor(Treatment, levels=c("Control","Water","Malarone"))) %>% 
   ## Scaling continuous variables
   mutate(delta_body_condition = scale(delta_body_condition)) %>% 
@@ -259,7 +260,7 @@ mod_gr <- mod_gr %>%
 
 g2_pred <- ggplot(mod_gr, aes(x = x, y = predicted)) +
     # geom_hline(yintercept = mean(mod_gr$predicted, na.rm = T), linetype = "dashed") +
-    labs(x = "", y = "log growth rate [g/day]\n(z-transformed)")+
+    labs(x = "", y = "growth rate [g/day]\n(z-transformed)")+
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high), colour = 'black', size = 1.5, width = .1)+
     geom_errorbar(aes(ymin = predicted - std.error , ymax = predicted + std.error),
                   size = 8, colour = c("#1F78B4", "#33A02C", "#FF7F00"), width = 0)+
@@ -268,7 +269,7 @@ g2_pred <- ggplot(mod_gr, aes(x = x, y = predicted)) +
     theme(legend.position="none", 
           axis.line.x = element_blank(), 
           axis.ticks.x = element_blank(),
-          plot.margin = margin(0, 0, 0, 0, "cm"))  +
+          plot.margin = margin(0, 0, 0, 0, "cm")) 
   scale_y_continuous(breaks = seq(0, 0.6, 0.1), limits = c(-0.06, 0.64))
 ```
 
