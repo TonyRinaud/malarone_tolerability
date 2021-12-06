@@ -339,31 +339,31 @@ B <-
 
 ## C: Leucocytozoon
 ## -----------------------------------------------------------------------------
-means <- bloodchem.data %>% 
-  group_by(Treatment) %>%
-  summarise(MEAN = mean(Leucocytozoon),
-            SD = sd(Leucocytozoon),
-            LCL = quantile(Leucocytozoon, 0.025),
-            UCL = quantile(Leucocytozoon, 0.975))
-C <-
-  ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    axis.title.x = element_blank()) +
-  scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
-  geom_errorbar(aes(ymin = LCL, ymax = UCL),
-                width = 0.1, size = 1) +
-  geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
-                width = 0, size = 8) +
-  geom_point(size = 2) +
-  geom_jitter(data = bloodchem.data, aes(y = Leucocytozoon), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = Leucocytozoon, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "C") +
-  scale_y_continuous(breaks = seq(0, 4, 1)) +
-  ylab("Leucocytozoon\ninfection intensity")
+# means <- bloodchem.data %>% 
+#   group_by(Treatment) %>%
+#   summarise(MEAN = mean(Leucocytozoon),
+#             SD = sd(Leucocytozoon),
+#             LCL = quantile(Leucocytozoon, 0.025),
+#             UCL = quantile(Leucocytozoon, 0.975))
+# C <-
+#   ggplot(means, aes(x = Treatment, y = MEAN)) +
+#   theme_article(base_size = 10) +
+#   theme(
+#     legend.position = "none",
+#     axis.text.x = element_blank(),
+#     axis.ticks.x = element_blank(),
+#     axis.title.x = element_blank()) +
+#   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
+#   geom_errorbar(aes(ymin = LCL, ymax = UCL),
+#                 width = 0.1, size = 1) +
+#   geom_errorbar(aes(col = Treatment, ymin = MEAN - SD, ymax = MEAN + SD),
+#                 width = 0, size = 8) +
+#   geom_point(size = 2) +
+#   geom_jitter(data = bloodchem.data, aes(y = Leucocytozoon), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
+#   geom_line(data = bloodchem.data, aes(y = Leucocytozoon, group = Ring), col = "Black", lty = "dotted") +
+#   labs(tag = "C") +
+#   scale_y_continuous(breaks = seq(0, 4, 1)) +
+#   ylab("Leucocytozoon\ninfection intensity")
 
 ## D: AP
 ## -----------------------------------------------------------------------------
@@ -373,7 +373,7 @@ means <- bloodchem.data %>%
             SD = sd(AP),
             LCL = quantile(AP, 0.025),
             UCL = quantile(AP, 0.975))
-D <-
+C <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
@@ -389,10 +389,10 @@ D <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = AP), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
   geom_line(data = bloodchem.data, aes(y = AP, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "D") +
+  labs(tag = "C") +
   ylab("AP\n(U/I)")
 
-## E: AST
+## D: AST
 ## -----------------------------------------------------------------------------
 means <- bloodchem.data %>% 
   group_by(Treatment) %>%
@@ -400,7 +400,7 @@ means <- bloodchem.data %>%
             SD = sd(AST),
             LCL = quantile(AST, 0.025),
             UCL = quantile(AST, 0.975))
-E <-
+D <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
@@ -416,11 +416,11 @@ E <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = AST), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
   geom_line(data = bloodchem.data, aes(y = AST, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "E") +
+  labs(tag = "D") +
   ylab("AST\n(U/I)")
 
 
-## F: GGT
+## E: GGT
 ## -----------------------------------------------------------------------------
 means <- bloodchem.data %>% 
   group_by(Treatment) %>%
@@ -428,7 +428,7 @@ means <- bloodchem.data %>%
             SD = sd(GGT),
             LCL = quantile(GGT, 0.025),
             UCL = quantile(GGT, 0.975))
-F <-
+E <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
@@ -444,10 +444,10 @@ F <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = GGT), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
   geom_line(data = bloodchem.data, aes(y = GGT, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "F") +
+  labs(tag = "E") +
   ylab("GGT\n(U/I)")
 
-## G: BuChE
+## F: BuChE
 ## -----------------------------------------------------------------------------
 means <- bloodchem.data %>% 
   group_by(Treatment) %>%
@@ -455,7 +455,7 @@ means <- bloodchem.data %>%
             SD = sd(BuChE),
             LCL = quantile(BuChE, 0.025),
             UCL = quantile(BuChE, 0.975))
-G <-
+F <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
@@ -471,10 +471,10 @@ G <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = BuChE), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
   geom_line(data = bloodchem.data, aes(y = BuChE, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "G") +
+  labs(tag = "F") +
   ylab("BuChE\n(KU/I)")
 
-## H: BA
+## G: BA
 ## -----------------------------------------------------------------------------
 means <- bloodchem.data %>% 
   group_by(Treatment) %>%
@@ -482,7 +482,7 @@ means <- bloodchem.data %>%
             SD = sd(BA),
             LCL = quantile(BA, 0.025),
             UCL = quantile(BA, 0.975))
-H <-
+G <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
@@ -498,10 +498,10 @@ H <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = BA), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
   geom_line(data = bloodchem.data, aes(y = BA, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "H") +
+  labs(tag = "G") +
   ylab("BA\n(µmol/L)")
 
-## I: LDH
+## H: LDH
 ## -----------------------------------------------------------------------------
 means <- bloodchem.data %>% 
   group_by(Treatment) %>%
@@ -509,7 +509,7 @@ means <- bloodchem.data %>%
             SD = sd(LDH),
             LCL = quantile(LDH, 0.025),
             UCL = quantile(LDH, 0.975))
-I <-
+H <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(legend.position = "none",
@@ -522,11 +522,11 @@ I <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = LDH), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
   geom_line(data = bloodchem.data, aes(y = LDH, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "I") +
+  labs(tag = "H") +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   ylab("LDH\n(U/I)")
 
-## J: CK
+## I: CK
 ## -----------------------------------------------------------------------------
 means <- bloodchem.data %>% 
   group_by(Treatment) %>%
@@ -534,7 +534,7 @@ means <- bloodchem.data %>%
             SD = sd(CK),
             LCL = quantile(CK, 0.025),
             UCL = quantile(CK, 0.975))
-J <-
+I <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(legend.position = "none",
@@ -547,11 +547,11 @@ J <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = CK), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
   geom_line(data = bloodchem.data, aes(y = CK, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "J") +
+  labs(tag = "I") +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   ylab("CK\n(U/I)")
 
-## K: ALB
+## J: ALB
 ## -----------------------------------------------------------------------------
 means <- bloodchem.data %>% 
   group_by(Treatment) %>%
@@ -559,7 +559,7 @@ means <- bloodchem.data %>%
             SD = sd(ALB),
             LCL = quantile(ALB, 0.025),
             UCL = quantile(ALB, 0.975))
-K <-
+J <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(legend.position = "none",
@@ -572,11 +572,11 @@ K <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = ALB), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
   geom_line(data = bloodchem.data, aes(y = ALB, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "K") +
+  labs(tag = "J") +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   ylab("ALB\n(g/L)")
 
-## L: TP
+## K: TP
 ## -----------------------------------------------------------------------------
 means <- bloodchem.data %>% 
   group_by(Treatment) %>%
@@ -584,7 +584,7 @@ means <- bloodchem.data %>%
             SD = sd(TP),
             LCL = quantile(TP, 0.025),
             UCL = quantile(TP, 0.975))
-L <-
+K <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(legend.position = "none",
@@ -597,7 +597,7 @@ L <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = TP), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
   geom_line(data = bloodchem.data, aes(y = TP, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "L") +
+  labs(tag = "K") +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   ylab("TP\n(g/L)")
 ```
@@ -688,7 +688,7 @@ ggsave(filename = "figures/MalaroneMultiplot.png", device = "png", dpi = 300,
 
 ## Bloodchemistry data
 ## -----------------------------------------------------------------------------
-A + B + C + D + E + F + G + H + I + J + K + L
+A + B + C + plot_spacer() + D + E + F + G + H + I + J + K
 ggsave(filename = "figures/BloodChemistryMultiplot.png", device = "png", dpi = 300,
        width = 9, height = 6, units = "in")
 ```
