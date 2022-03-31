@@ -1,6 +1,6 @@
 ---
-title: "R-code for 'TITLE OF MANUSCRIPT'"
-author: "NAMES OF AUTHORS"
+title: "R-code for 'Tolerability of atovaquone-proguanil application in common buzzards'"
+author: "Anja Wiegmann, Tony Rinaud, Meinolf Ottensmann, Oliver Krüger, Andrea Springer, Marko Legler, Michael Fehr, Christina Strube and Nayden Chakarov"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -35,23 +35,13 @@ Experimental study comprising data from 299 nestlings that were either treated w
 ## -----------------------------------------------------------------------------
 malarone.data <- readr::read_delim(
   file = 'data/malarone_tolerability.csv', delim = ";", col_types = "fffffffinnnnnnnnnnnffff") %>% 
-  mutate(Treatment = factor(Treatment, levels=c("Control","Water","Malarone"))) %>% 
+  mutate(Treatment = factor(Treatment, levels = c("Control","Water","Malarone"))) %>% 
   ## Scaling continuous variables
   mutate(delta_body_condition = scale(delta_body_condition)) %>% 
   mutate(body_condition.1 = scale(body_condition.1)) %>% 
   mutate(body_condition.2 = scale(body_condition.2)) %>% 
   mutate(growth_rate = scale(growth_rate))
 ```
-
-Summarise dataset:
-
-```{r}
-table(malarone.data$Year)
-table(malarone.data$Treatment)
-quantile(malarone.data$avg_age)
-quantile(malarone.data$days_resample)
-```
-
 
 * `Bloodchemistry data`
 
@@ -79,7 +69,276 @@ pander::pandoc.table(table(bloodchem.data$Treatment))
 ## Analyses
 ### `Experimental data`
 
-**We should consider variable intervals between sampling events! Age_ind_days does not account for this, nor is it clear if treatment effects would need time to show up** 
+#### Data summary
+
+```{r}
+## Sample size per treatment and year
+with(malarone.data, table(Year, Treatment))
+quantile(malarone.data$avg_age)
+quantile(malarone.data$days_resample)
+```
+
+* Visualise distribution of age at sampling for each treatment level
+
+```{r}
+## Create data frame with data on both sampling occasion 
+## -----------------------------------------------------------------------------
+summary.df <- data.frame(
+  Treatment = rep(malarone.data$Treatment, 2),
+  Age = c(malarone.data$Age.1, malarone.data$Age.2),
+  Ring = rep(malarone.data$Ring, 2),
+  Wing = c(malarone.data$Wing.1, malarone.data$Wing.2),
+  Weight = c(malarone.data$Weight.1, malarone.data$Weight.2),
+  Sampling = rep(c("First sample", "Second sample"), each = 299),
+  Sex = rep(malarone.data$Sex,2))
+
+## Summarise Age at sampling
+## -----------------------------------------------------------------------------
+summary.df %>% 
+  group_by(Treatment, Sampling) %>%
+  summarise(MEAN = mean(Age),
+            SD = sd(Age),
+            Min = min(Age),
+            Max = max(Age),
+            LCL = quantile(Age, 0.025),
+            UCL = quantile(Age, 0.975))
+
+## Summarise Weight at sampling 
+## -----------------------------------------------------------------------------
+summary.df %>% 
+  group_by(Treatment, Sampling) %>%
+  summarise(MEAN = mean(Weight),
+            SD = sd(Weight),
+            Min = min(Weight),
+            Max = max(Weight),
+            LCL = quantile(Weight, 0.025),
+            UCL = quantile(Weight, 0.975))
+
+## Plot distributions
+## -----------------------------------------------------------------------------
+ggplot(summary.df, aes(x = Sampling, y = Age, col = Treatment)) +
+  theme_article(base_size = 10) +
+  theme(legend.position = "bottom") +
+  geom_boxplot(position = position_dodge2(width = .5)) +
+  scale_y_continuous(breaks = seq(5, 40, 5)) +
+  ylab("Nestling age (days)") +
+  xlab("Sampling ocassion")
+```
+
+* Visualise regression of body weight on wing length as measure of body condition
+
+To explore the potential of treatment-specific effects on growth parameters, we next visualise the regression of body weight on wing length. For comparison, we include reference data that has been obtained for nestlings of known hatching dates (Bijlsma 1999, Limosa 72, Appendices 1 - 2).
+
+```{r}
+## read reference dataset
+## -----------------------------------------------------------------------------
+bijlsma <- read.csv("data/bijlsma_1999_Limosa_72.csv")
+head(bijlsma)
+tail(bijlsma)
+
+## visualise sex-specific condition curves
+## -----------------------------------------------------------------------------
+ggplot(bijlsma, aes(x = wing, y =  weight, shape = sex, col = sex)) +
+  geom_point(size = 1, na.rm = T) +
+  geom_smooth(method = "lm", na.rm = T, formula = "y ~ x", se = F) +
+  theme_article() +
+  theme(legend.position = c(1,0),
+        legend.justification = c(1,0)) +
+  scale_x_log10(breaks = seq(0, 35, 5)) +
+  ylab("Mean body weight [g]") +
+  xlab("Wing length [cm]") +
+  labs(title = "Body condition of buzzard nestlings",
+       caption = "Data: Bijlsma 1999, Limosa 72")
+
+## obtain formula for age-specific regression lines
+## -----------------------------------------------------------------------------
+female <- lm(weight ~ log10(wing), data = bijlsma[bijlsma$sex == "Female",])
+summary(female)
+female$coefficients
+
+male <- lm(weight ~ log10(wing), data = bijlsma[bijlsma$sex == "Male",])
+summary(male)
+male$coefficients
+```
+
+* Establish growth curves for all treatment x sex combinations (n=6)
+
+```{r}
+## define all combinations
+## -----------------------------------------------------------------------------
+combinations <- data.frame(Treatment = rep(c("Control", "Malarone", "Water"), each = 2),
+                           Sex = rep(c("Female", "Male"), 3))
+
+## fit models 
+## -----------------------------------------------------------------------------
+models <- lapply(1:nrow(combinations), function(x) {
+  model <- lmer(Weight ~ log10(Wing) + (1|Ring),
+                data = filter(summary.df, 
+                              Treatment == combinations$Treatment[x],
+                              Sex == combinations$Sex[x]))
+  data.frame(Treatment = combinations$Treatment[x],
+             Sex = combinations$Sex[x],
+             Intercept = summary(model)$coefficients[1,1],
+             Slope = summary(model)$coefficients[2,1],
+             R2.marg = performance::model_performance(model)[4],
+             R2.cond = performance::model_performance(model)[3])
+
+}) %>% 
+  do.call("rbind",.)
+models
+```
+
+
+* Adding reference data to raw data points from the current study
+
+```{r}
+ ## Male control
+## -----------------------------------------------------------------------------
+m.c <- 
+  ggplot(filter(summary.df, Sex == "Male", Treatment == "Control"),
+         aes (x = Wing, y =  Weight)) +
+  geom_abline(intercept = male$coefficients[1], slope = male$coefficients[2],
+              lty = 4, size = 1.1) +
+  geom_abline(intercept = models$Intercept[2], slope = models$Slope[2],
+              lty = 1, size = 1.1, col = "#1F78B4") +
+  geom_point(size = 1.5, alpha = .6, aes(shape = Sampling), col = "#1F78B4") +
+  guides(col = "none") +
+  theme_article() + 
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  ylab("Body weight (g)") +
+  labs(subtitle = "Control") +
+  scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
+  scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+            label = paste("R² (marg.)=", round(models$R2_marginal[2],2)),
+            hjust = 1.015, vjust = 1.5, col = "Black") +
+  geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "Control"),
+            label = "\U2642", hjust = 0, vjust = 1.5, col = "Black", size = 8)
+
+## Male malarone
+## -----------------------------------------------------------------------------
+m.m <- 
+  ggplot(filter(summary.df, Sex == "Male", Treatment == "Malarone"),
+         aes (x = Wing, y =  Weight)) +
+  geom_abline(intercept = male$coefficients[1], slope = male$coefficients[2],
+              lty = 4, size = 1.1) +
+  geom_abline(intercept = models$Intercept[4], slope = models$Slope[4],
+              lty = 1, size = 1.1, col = "#33A02C") +
+  geom_point(size = 1.5, alpha = .6, aes(shape = Sampling), col = "#33A02C") +
+  guides(col = "none") +
+  labs(subtitle = "Malarone") +
+  theme_article() + 
+  theme(legend.position = "none",
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank()) +
+  scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
+  scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+            label = paste("R² (marg.)=", round(models$R2_marginal[4],2)),
+            hjust = 1.015, vjust = 1.5, col = "Black") 
+
+## Male water
+## -----------------------------------------------------------------------------
+m.w <- 
+  ggplot(filter(summary.df, Sex == "Male", Treatment == "Water"),
+         aes (x = Wing, y =  Weight)) +
+  geom_abline(intercept = male$coefficients[1], slope = male$coefficients[2],
+              lty = 4, size = 1.1) +
+  geom_abline(intercept = models$Intercept[6], slope = models$Slope[6],
+              lty = 1, size = 1.1, col = "#FF7F00") +
+  geom_point(size = 1.5, alpha = .6, aes(shape = Sampling), col = "#FF7F00") +
+  guides(col = "none") +
+  labs(subtitle = "Water") +
+  theme_article() + 
+  theme(legend.position = "none",
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank()) +
+  scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
+  scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+            label = paste("R² (marg.)=", round(models$R2_marginal[6],2)),
+            hjust = 1.015, vjust = 1.5, col = "Black") 
+
+## Female control
+## -----------------------------------------------------------------------------
+f.c <- 
+  ggplot(filter(summary.df, Sex == "Female", Treatment == "Control"),
+         aes (x = Wing, y =  Weight)) +
+  geom_abline(intercept = female$coefficients[1], slope = female$coefficients[2],
+              lty = 4, size = 1.1) +
+  geom_abline(intercept = models$Intercept[1], slope = models$Slope[1],
+              lty = 1, size = 1.1, col = "#1F78B4") +
+  geom_point(size = 1.5, alpha = .6, aes(shape = Sampling), col = "#1F78B4") +
+  guides(col = "none") +
+  theme_article() + 
+  theme(legend.position = "none",
+        axis.title.x = element_blank()) +
+  ylab("Body weight (g)") +
+  scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
+  scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+            label = paste("R² (marg.)=", round(models$R2_marginal[1],2)), 
+            hjust = 1.015, vjust = 1.5, col = "Black") +
+  geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "Control"),
+            label = "\U2640", hjust = 0, vjust = 1.5, col = "Black", size = 8) 
+
+## Female malarone
+## -----------------------------------------------------------------------------
+f.m <- 
+  ggplot(filter(summary.df, Sex == "Female", Treatment == "Malarone"),
+         aes (x = Wing, y =  Weight)) +
+  geom_abline(intercept = female$coefficients[1], slope = female$coefficients[2],
+              lty = 4, size = 1.1) +
+  geom_abline(intercept = models$Intercept[3], slope = models$Slope[3],
+              lty = 1, size = 1.1, col = "#33A02C") +
+  geom_point(size = 1.5, alpha = .6, aes(shape = Sampling), col = "#33A02C") +
+  guides(col = "none") +
+  theme_article() + 
+  theme(legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) +
+  xlab("Wing length (cm)") +
+  scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
+  scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+            label = paste("R² (marg.)=", round(models$R2_marginal[3],2)),
+            hjust = 1.015, vjust = 1.5, col = "Black") 
+
+## Female water
+## -----------------------------------------------------------------------------
+f.w <- 
+  ggplot(filter(summary.df, Sex == "Female", Treatment == "Water"),
+         aes (x = Wing, y =  Weight)) +
+  geom_abline(intercept = female$coefficients[1], slope = female$coefficients[2],
+              lty = 4, size = 1.1) +
+  geom_abline(intercept = models$Intercept[5], slope = models$Slope[5],
+              lty = 1, size = 1.1, col = "#FF7F00") +
+  geom_point(size = 1.5, alpha = .6, aes(shape = Sampling), col = "#FF7F00") +
+  guides(fill = "none") +
+  theme_article() + 
+  theme(
+    axis.title = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    strip.text = element_blank(),
+    legend.position = c(1,0),
+    legend.justification = c(1,0),
+    legend.title = element_blank()) +
+  scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
+  scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+            label = paste("R² (marg.)=", round(models$R2_marginal[5],2)), 
+            hjust = 1.015, vjust = 1.5, col = "Black") 
+(m.c + m.m + m.w) / (f.c + f.m + f.w)
+ggsave(filename = "figures/Weight_Wing.png", device = "png", dpi = 300,
+       width = 9, height = 6, units = "in")
+```
 
 #### Treatment effects on body condition 
 
@@ -681,7 +940,7 @@ sjPlot::tab_model(
 ```{r}
 ## Malarone experiment
 ## -----------------------------------------------------------------------------
-g1_pred_delta + g2_pred + plot_annotation(tag_levels = 'A')& 
+g1_pred_delta + g2_pred + plot_annotation(tag_levels = 'A') & 
   theme(plot.tag = element_text(size = 14))
 ggsave(filename = "figures/MalaroneMultiplot.png", device = "png", dpi = 300,
        width = 9, height = 6, units = "in")
