@@ -459,6 +459,8 @@ g1_pred_delta <- ggplot(pred.bci, aes(x = x, y = predicted)) +
   theme(legend.position="none",
         axis.line.x = element_blank(),
         axis.ticks.x = element_blank(),
+        axis.text = element_text(size=16),
+        axis.title.y = element_text(size=20, margin =  unit(c(0, 5, 0, 0), "mm")),
         plot.margin = margin(0, 0, 0, 0, "cm"))
 ```
 
@@ -528,6 +530,8 @@ g2_pred <- ggplot(mod_gr, aes(x = x, y = predicted)) +
     theme(legend.position="none", 
           axis.line.x = element_blank(), 
           axis.ticks.x = element_blank(),
+          axis.text = element_text(size=16),
+        axis.title.y = element_text(size=20, margin =  unit(c(0, 5, 0, 5), "mm")),
           plot.margin = margin(0, 0, 0, 0, "cm")) 
   scale_y_continuous(breaks = seq(0, 0.6, 0.1), limits = c(-0.06, 0.64))
 ```
