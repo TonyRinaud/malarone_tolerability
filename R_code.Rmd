@@ -207,13 +207,13 @@ m.c <-
   theme(legend.position = "none",
         axis.text.x = element_blank(),
         axis.title.x = element_blank(),
-        axis.ticks.x = element_blank()) +
+        axis.ticks.x = element_blank()) + 
   ylab("Body weight (g)") +
   labs(subtitle = "Control") +
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
-            label = paste("R² (marg.)=", round(models$R2_marginal[2],2)),
+            label = paste("R² (cond.)=", round(models$R2_conditional[2],2)),       # ! issue with R² marg. calculation, replaced with R² conditional in the meantime
             hjust = 1.015, vjust = 1.5, col = "Black") +
   geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "Control"),
             label = "\U2642", hjust = 0, vjust = 1.5, col = "Black", size = 8)
@@ -238,7 +238,7 @@ m.m <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
-            label = paste("R² (marg.)=", round(models$R2_marginal[4],2)),
+            label = paste("R² (cond.)=", round(models$R2_conditional[4],2)), # ! issue with R² marg. calculation, replaced with R² conditional in the meantime
             hjust = 1.015, vjust = 1.5, col = "Black") 
 
 ## Male water
@@ -261,7 +261,7 @@ m.w <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
-            label = paste("R² (marg.)=", round(models$R2_marginal[6],2)),
+            label = paste("R² (cond.)=", round(models$R2_conditional[6],2)),  # ! issue with R² marg. calculation, replaced with R² conditional in the meantime
             hjust = 1.015, vjust = 1.5, col = "Black") 
 
 ## Female control
@@ -282,7 +282,7 @@ f.c <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
-            label = paste("R² (marg.)=", round(models$R2_marginal[1],2)), 
+            label = paste("R² (cond.)=", round(models$R2_conditional[1],2)),      # ! issue with R² marg. calculation, replaced with R² conditional in the meantime
             hjust = 1.015, vjust = 1.5, col = "Black") +
   geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "Control"),
             label = "\U2640", hjust = 0, vjust = 1.5, col = "Black", size = 8) 
@@ -307,7 +307,7 @@ f.m <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
-            label = paste("R² (marg.)=", round(models$R2_marginal[3],2)),
+            label = paste("R² (cond.)=", round(models$R2_conditional[3],2)),
             hjust = 1.015, vjust = 1.5, col = "Black") 
 
 ## Female water
@@ -333,7 +333,7 @@ f.w <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
-            label = paste("R² (marg.)=", round(models$R2_marginal[5],2)), 
+            label = paste("R² (cond.)=", round(models$R2_conditional[5],2)), 
             hjust = 1.015, vjust = 1.5, col = "Black") 
 (m.c + m.m + m.w) / (f.c + f.m + f.w)
 ggsave(filename = "figures/Weight_Wing.png", device = "png", dpi = 300,
@@ -361,6 +361,8 @@ g1_t1 <- ggplot(malarone.data)+
   theme_article() +
   theme(legend.position="none",
         axis.line.x = element_blank(),
+        axis.text = element_text(size=16),
+        axis.title = element_text(size=18),
         axis.ticks.x = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "cm")) +
   scale_y_continuous(limits = c(-4.5, 4.75), breaks = seq(-4, 4, 1)) +
@@ -383,6 +385,8 @@ g1_t2 <- ggplot(malarone.data)+
   theme_article() +
   theme(legend.position="none",
         axis.line.x = element_blank(),
+        axis.text = element_text(size=16),
+        axis.title = element_text(size=18),
         axis.ticks.x = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "cm")) +
   scale_y_continuous(limits = c(-4.5, 4.75), breaks = seq(-4, 4, 1)) +
@@ -404,6 +408,8 @@ g1_delta <- ggplot(malarone.data)+
   theme_article() +
   theme(legend.position="none",
         axis.line.x = element_blank(),
+        axis.text = element_text(size=16),
+        axis.title = element_text(size=18),
         axis.ticks.x = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "cm")) +
   scale_y_continuous(limits = c(-4.5, 4.75), breaks = seq(-4, 4, 1)) +
@@ -434,7 +440,7 @@ performance::model_performance(model.bci)
 ## Predicted values for each treatment
 ## -----------------------------------------------------------------------------
 pred.bci <- get_model_data(model.bci, type = 'pred', terms = "Treatment") %>% 
-  mutate(x = factor(x = c("Control","Water","Malarone"), levels = c("Control","Water","Malarone")))
+  mutate(x = factor(x = c("Control","Water","MALARONE™"), levels = c("Control","Water","MALARONE™")))
 
 ## add sample size to labels
 ## -----------------------------------------------------------------------------
@@ -459,7 +465,7 @@ g1_pred_delta <- ggplot(pred.bci, aes(x = x, y = predicted)) +
   theme(legend.position="none",
         axis.line.x = element_blank(),
         axis.ticks.x = element_blank(),
-        axis.text = element_text(size=16),
+        axis.text = element_text(size=12),
         axis.title.y = element_text(size=20, margin =  unit(c(0, 5, 0, 0), "mm")),
         plot.margin = margin(0, 0, 0, 0, "cm"))
 ```
@@ -486,6 +492,8 @@ g2_water <- ggplot(malarone.data, aes(Treatment, growth_rate)) +
   theme_article()+
   theme(legend.position="none",
         axis.line.x = element_blank(),
+        axis.text = element_text(size=14),
+        axis.title = element_text(size=18),
         axis.ticks.x = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "cm"))
 ```
@@ -511,7 +519,7 @@ performance::model_performance(lmer_gr_treat)
 ## Predicted values for each treatment
 ## -----------------------------------------------------------------------------
 mod_gr <- get_model_data(lmer_gr_treat,type='pred',terms="Treatment") %>% 
-   mutate(x = factor(c("Control","Water","Malarone"), levels = c("Control","Water","Malarone")))
+   mutate(x = factor(c("Control","Water","MALARONE™"), levels = c("Control","Water","MALARONE™")))
 
 ## add sample size to labels
 ## -----------------------------------------------------------------------------
@@ -530,10 +538,10 @@ g2_pred <- ggplot(mod_gr, aes(x = x, y = predicted)) +
     theme(legend.position="none", 
           axis.line.x = element_blank(), 
           axis.ticks.x = element_blank(),
-          axis.text = element_text(size=16),
+          axis.text = element_text(size=12),
         axis.title.y = element_text(size=20, margin =  unit(c(0, 5, 0, 5), "mm")),
           plot.margin = margin(0, 0, 0, 0, "cm")) 
-  scale_y_continuous(breaks = seq(0, 0.6, 0.1), limits = c(-0.06, 0.64))
+  # scale_y_continuous(breaks = seq(0, 0.6, 0.1), limits = c(-0.06, 0.64))
 ```
 
 ### `Bloodchemistry`
