@@ -15,7 +15,6 @@ This document provides all the `R code` used in our paper. Both the Rmarkdown fi
 In order to repeat analyses presented in this document, the following packages are required. 
 
 ```{r packages, message=F, warning=F}
-
 ## Load packages
 ## -----------------------------------------------------------------------------
 easypackages::libraries(
@@ -25,9 +24,9 @@ easypackages::libraries(
 
 ## Loading raw datasets
 
-* `Malarone experiment`
+* `Malarone® experiment`
 
-Experimental study comprising data from 299 nestlings that were either treated with Malarone or water. An additional subset comprises individuals that received no treatment and were therefore only exposed to repeated routine sampling and handling. 
+Experimental study comprising data from 299 nestlings that were either treated with Malarone® or water. An additional subset comprises individuals that received no treatment and were therefore only exposed to repeated routine sampling and handling. 
 
 
 ```{r echo = TRUE, warning=FALSE}
@@ -35,7 +34,10 @@ Experimental study comprising data from 299 nestlings that were either treated w
 ## -----------------------------------------------------------------------------
 malarone.data <- readr::read_delim(
   file = 'data/malarone_tolerability.csv', delim = ";", col_types = "fffffffinnnnnnnnnnnffff") %>% 
-  mutate(Treatment = factor(Treatment, levels = c("Control","Water","Malarone"))) %>% 
+  mutate(Treatment = case_when(Treatment == "Control" ~ "control",
+                               Treatment == "Water" ~ "water",
+                               Treatment == "Malarone" ~ "Malarone®")) %>% 
+  mutate(Treatment = factor(Treatment, levels = c("control","water","Malarone®"))) %>% 
   ## Scaling continuous variables
   mutate(delta_body_condition = scale(delta_body_condition)) %>% 
   mutate(body_condition.1 = scale(body_condition.1)) %>% 
@@ -45,7 +47,7 @@ malarone.data <- readr::read_delim(
 
 * `Bloodchemistry data`
 
-Dataset on blood chemistry values for 11 individuals of the `Malarone experiment` prior and after treatment. Additionally, blood chemistry values for another 60 individuals that were not part of the `Malarone experiment`.
+Dataset on blood chemistry values for 11 individuals of the `Malarone® experiment` prior and after treatment. Additionally, blood chemistry values for another 60 individuals that were not part of the `Malarone® experiment`.
 
 
 ```{r}
@@ -166,7 +168,7 @@ male$coefficients
 ```{r}
 ## define all combinations
 ## -----------------------------------------------------------------------------
-combinations <- data.frame(Treatment = rep(c("Control", "Malarone", "Water"), each = 2),
+combinations <- data.frame(Treatment = rep(c("control", "Malarone®", "water"), each = 2),
                            Sex = rep(c("Female", "Male"), 3))
 
 ## fit models 
@@ -195,7 +197,7 @@ models
  ## Male control
 ## -----------------------------------------------------------------------------
 m.c <- 
-  ggplot(filter(summary.df, Sex == "Male", Treatment == "Control"),
+  ggplot(filter(summary.df, Sex == "Male", Treatment == "control"),
          aes (x = Wing, y =  Weight)) +
   geom_abline(intercept = male$coefficients[1], slope = male$coefficients[2],
               lty = 4, size = 1.1) +
@@ -209,19 +211,19 @@ m.c <-
         axis.title.x = element_blank(),
         axis.ticks.x = element_blank()) +
   ylab("Body weight (g)") +
-  labs(subtitle = "Control") +
+  labs(subtitle = "control") +
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
-  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
             label = paste("R² (marg.)=", round(models$R2_marginal[2],2)),
             hjust = 1.015, vjust = 1.5, col = "Black") +
-  geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "Control"),
+  geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "control"),
             label = "\U2642", hjust = 0, vjust = 1.5, col = "Black", size = 8)
 
-## Male malarone
+## Male Malarone®
 ## -----------------------------------------------------------------------------
 m.m <- 
-  ggplot(filter(summary.df, Sex == "Male", Treatment == "Malarone"),
+  ggplot(filter(summary.df, Sex == "Male", Treatment == "Malarone®"),
          aes (x = Wing, y =  Weight)) +
   geom_abline(intercept = male$coefficients[1], slope = male$coefficients[2],
               lty = 4, size = 1.1) +
@@ -229,7 +231,7 @@ m.m <-
               lty = 1, size = 1.1, col = "#33A02C") +
   geom_point(size = 1.5, alpha = .6, aes(shape = Sampling), col = "#33A02C") +
   guides(col = "none") +
-  labs(subtitle = "Malarone") +
+  labs(subtitle = "Malarone®") +
   theme_article() + 
   theme(legend.position = "none",
         axis.text = element_blank(),
@@ -237,14 +239,14 @@ m.m <-
         axis.ticks = element_blank()) +
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
-  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
             label = paste("R² (marg.)=", round(models$R2_marginal[4],2)),
             hjust = 1.015, vjust = 1.5, col = "Black") 
 
 ## Male water
 ## -----------------------------------------------------------------------------
 m.w <- 
-  ggplot(filter(summary.df, Sex == "Male", Treatment == "Water"),
+  ggplot(filter(summary.df, Sex == "Male", Treatment == "water"),
          aes (x = Wing, y =  Weight)) +
   geom_abline(intercept = male$coefficients[1], slope = male$coefficients[2],
               lty = 4, size = 1.1) +
@@ -252,7 +254,7 @@ m.w <-
               lty = 1, size = 1.1, col = "#FF7F00") +
   geom_point(size = 1.5, alpha = .6, aes(shape = Sampling), col = "#FF7F00") +
   guides(col = "none") +
-  labs(subtitle = "Water") +
+  labs(subtitle = "water") +
   theme_article() + 
   theme(legend.position = "none",
         axis.text = element_blank(),
@@ -260,14 +262,14 @@ m.w <-
         axis.ticks = element_blank()) +
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
-  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
             label = paste("R² (marg.)=", round(models$R2_marginal[6],2)),
             hjust = 1.015, vjust = 1.5, col = "Black") 
 
 ## Female control
 ## -----------------------------------------------------------------------------
 f.c <- 
-  ggplot(filter(summary.df, Sex == "Female", Treatment == "Control"),
+  ggplot(filter(summary.df, Sex == "Female", Treatment == "control"),
          aes (x = Wing, y =  Weight)) +
   geom_abline(intercept = female$coefficients[1], slope = female$coefficients[2],
               lty = 4, size = 1.1) +
@@ -281,16 +283,16 @@ f.c <-
   ylab("Body weight (g)") +
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
-  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
             label = paste("R² (marg.)=", round(models$R2_marginal[1],2)), 
             hjust = 1.015, vjust = 1.5, col = "Black") +
-  geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "Control"),
+  geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "control"),
             label = "\U2640", hjust = 0, vjust = 1.5, col = "Black", size = 8) 
 
-## Female malarone
+## Female Malarone®
 ## -----------------------------------------------------------------------------
 f.m <- 
-  ggplot(filter(summary.df, Sex == "Female", Treatment == "Malarone"),
+  ggplot(filter(summary.df, Sex == "Female", Treatment == "Malarone®"),
          aes (x = Wing, y =  Weight)) +
   geom_abline(intercept = female$coefficients[1], slope = female$coefficients[2],
               lty = 4, size = 1.1) +
@@ -306,14 +308,14 @@ f.m <-
   xlab("Wing length (cm)") +
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
-  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
             label = paste("R² (marg.)=", round(models$R2_marginal[3],2)),
             hjust = 1.015, vjust = 1.5, col = "Black") 
 
 ## Female water
 ## -----------------------------------------------------------------------------
 f.w <- 
-  ggplot(filter(summary.df, Sex == "Female", Treatment == "Water"),
+  ggplot(filter(summary.df, Sex == "Female", Treatment == "water"),
          aes (x = Wing, y =  Weight)) +
   geom_abline(intercept = female$coefficients[1], slope = female$coefficients[2],
               lty = 4, size = 1.1) +
@@ -332,12 +334,12 @@ f.w <-
     legend.title = element_blank()) +
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
-  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "Control"),
+  geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
             label = paste("R² (marg.)=", round(models$R2_marginal[5],2)), 
             hjust = 1.015, vjust = 1.5, col = "Black") 
 (m.c + m.m + m.w) / (f.c + f.m + f.w)
 ggsave(filename = "figures/Weight_Wing.png", device = "png", dpi = 300,
-       width = 9, height = 6, units = "in")
+       width = 6, height = 4, units = "in")
 ```
 
 #### Treatment effects on body condition 
@@ -434,7 +436,7 @@ performance::model_performance(model.bci)
 ## Predicted values for each treatment
 ## -----------------------------------------------------------------------------
 pred.bci <- get_model_data(model.bci, type = 'pred', terms = "Treatment") %>% 
-  mutate(x = factor(x = c("Control","Water","Malarone"), levels = c("Control","Water","Malarone")))
+  mutate(x = factor(x = c("control","water","Malarone®"), levels = c("control","water","Malarone®")))
 
 ## add sample size to labels
 ## -----------------------------------------------------------------------------
@@ -463,7 +465,7 @@ g1_pred_delta <- ggplot(pred.bci, aes(x = x, y = predicted)) +
 ```
 
 
-#### Growth rate between control and malarone treated nestlings
+#### Growth rate between control and Malarone® treated nestlings
 
 
 Visualising the raw data
@@ -509,7 +511,7 @@ performance::model_performance(lmer_gr_treat)
 ## Predicted values for each treatment
 ## -----------------------------------------------------------------------------
 mod_gr <- get_model_data(lmer_gr_treat,type='pred',terms="Treatment") %>% 
-   mutate(x = factor(c("Control","Water","Malarone"), levels = c("Control","Water","Malarone")))
+   mutate(x = factor(c("control","water","Malarone®"), levels = c("control","water","Malarone®")))
 
 ## add sample size to labels
 ## -----------------------------------------------------------------------------
@@ -550,6 +552,7 @@ A <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
+    aspect.ratio = 1,
     legend.position = "none",
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -580,6 +583,7 @@ B <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
+    aspect.ratio = 1,
     legend.position = "none",
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -636,6 +640,7 @@ C <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
+    aspect.ratio = 1,
     legend.position = "none",
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -663,6 +668,7 @@ D <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
+    aspect.ratio = 1,
     legend.position = "none",
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -691,6 +697,7 @@ E <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
+    aspect.ratio = 1,
     legend.position = "none",
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -718,6 +725,7 @@ F <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
+    aspect.ratio = 1,
     legend.position = "none",
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -745,6 +753,7 @@ G <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
   theme(
+    aspect.ratio = 1,
     legend.position = "none",
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -771,8 +780,12 @@ means <- bloodchem.data %>%
 H <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
-  theme(legend.position = "none",
-        axis.title.x = element_blank()) +
+  theme(
+    aspect.ratio = 1,
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()) +
   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
@@ -796,8 +809,10 @@ means <- bloodchem.data %>%
 I <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
-  theme(legend.position = "none",
-        axis.title.x = element_blank()) +
+  theme(
+    aspect.ratio = 1,
+    legend.position = "none",
+    axis.title.x = element_blank()) +
   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
@@ -821,7 +836,9 @@ means <- bloodchem.data %>%
 J <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
-  theme(legend.position = "none",
+  theme(
+    aspect.ratio = 1,
+        legend.position = "none",
         axis.title.x = element_blank()) +
   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL),
@@ -846,8 +863,10 @@ means <- bloodchem.data %>%
 K <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
   theme_article(base_size = 10) +
-  theme(legend.position = "none",
-        axis.title.x = element_blank()) +
+  theme(
+    aspect.ratio = 1,
+    legend.position = "none",
+    axis.title.x = element_blank()) +
   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
@@ -938,16 +957,16 @@ sjPlot::tab_model(
 ### Multiplots
 
 ```{r}
-## Malarone experiment
+## Malarone® experiment
 ## -----------------------------------------------------------------------------
 g1_pred_delta + g2_pred + plot_annotation(tag_levels = 'A') & 
   theme(plot.tag = element_text(size = 14))
 ggsave(filename = "figures/MalaroneMultiplot.png", device = "png", dpi = 300,
-       width = 9, height = 6, units = "in")
+       width = 6, height = 4, units = "in")
 
 ## Bloodchemistry data
 ## -----------------------------------------------------------------------------
-A + B + C + plot_spacer() + D + E + F + G + H + I + J + K
+A + B + C + D + E + F + G + H + I + J + K + plot_spacer() +  plot_layout(ncol = 3)
 ggsave(filename = "figures/BloodChemistryMultiplot.png", device = "png", dpi = 300,
        width = 9, height = 6, units = "in")
 ```
