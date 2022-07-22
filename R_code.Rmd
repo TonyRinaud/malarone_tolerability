@@ -186,7 +186,7 @@ models <- lapply(1:nrow(combinations), function(x) {
              Slope = summary(model)$coefficients[2,1],
              R2.marg = performance::model_performance(model)[4],
              R2.cond = performance::model_performance(model)[3])
-
+  
 }) %>% 
   do.call("rbind",.)
 models
@@ -196,7 +196,7 @@ models
 * Adding reference data to raw data points from the current study
 
 ```{r}
- ## Male control
+## Male control
 ## -----------------------------------------------------------------------------
 m.c <- 
   ggplot(filter(summary.df, Sex == "Male", Treatment == "control"),
@@ -219,8 +219,8 @@ m.c <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
-            label = paste("R²=", round(models$R2_conditional[2],2)),
-            hjust = 3.3, vjust = 1.5, col = "Black", size= 3) +
+            label = paste("R² =", round(models$R2_conditional[2],2)),
+            hjust = 3.1, vjust = 1.5, col = "Black", size= 3) +
   geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "control"),
             label = "\U2642", hjust = 3.5, vjust = 0, col = "Black", size = 7) +
   coord_cartesian(clip = 'off')
@@ -246,8 +246,8 @@ m.m <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
-            label = paste("R²=", round(models$R2_conditional[4],2)),
-            hjust = 3.3, vjust = 1.7, col = "Black", size= 3) 
+            label = paste("R² =", round(models$R2_conditional[4],2)),
+            hjust = 3.1, vjust = 1.7, col = "Black", size= 3) 
 
 ## Male water
 ## -----------------------------------------------------------------------------
@@ -270,8 +270,8 @@ m.w <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
-            label = paste("R²=", round(models$R2_conditional[6],2)),
-            hjust = 3.3, vjust = 1.7, col = "Black", size= 3) 
+            label = paste("R² =", round(models$R2_conditional[6],2)),
+            hjust = 3.1, vjust = 1.7, col = "Black", size= 3) 
 
 ## Female control
 ## -----------------------------------------------------------------------------
@@ -292,8 +292,8 @@ f.c <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
-            label = paste("R²=", round(models$R2_conditional[1],2)), 
-            hjust = 3.3, vjust = 1.7, col = "Black", size= 3) +
+            label = paste("R² =", round(models$R2_conditional[1],2)), 
+            hjust = 3.1, vjust = 1.7, col = "Black", size= 3) +
   geom_text(data = data.frame(Wing = 3.9, Weight = Inf, Treatment = "control"),
             label = "\U2640", hjust = 3.5, vjust = -0.1, col = "Black", size = 7)+
   coord_cartesian(clip = 'off') 
@@ -319,8 +319,8 @@ f.m <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
-            label = paste("R²=", round(models$R2_conditional[3],2)),
-            hjust = 3.3, vjust = 1.7, col = "Black", size = 3) 
+            label = paste("R² =", round(models$R2_conditional[3],2)),
+            hjust = 3.1, vjust = 1.7, col = "Black", size = 3) 
 
 ## Female water
 ## -----------------------------------------------------------------------------
@@ -347,8 +347,8 @@ f.w <-
   scale_y_continuous(breaks = seq(0, 1000, 200), limits = c(150, 1050)) +
   scale_x_log10(breaks = seq(0, 30, 5), limits = c(3.8, 30.1)) +
   geom_text(data = data.frame(Wing = Inf, Weight = Inf, Treatment = "control"),
-            label = paste("R²=", round(models$R2_conditional[5],2)), 
-            hjust = 3.3, vjust = 1.7, col = "Black", size= 3) 
+            label = paste("R² =", round(models$R2_conditional[5],2)), 
+            hjust = 3.1, vjust = 1.7, col = "Black", size= 3) 
 (m.c + m.m + m.w) / (f.c + f.m + f.w)
 ggsave(filename = "figures/Weight_Wing.png", device = "png", dpi = 300,
        width = 6, height = 4, units = "in")
@@ -433,7 +433,7 @@ As shown above, there was some heterogeneity among treatment in the mean body co
 ## Run LMM
 ## -----------------------------------------------------------------------------
 model.bci <- lmerTest::lmer(delta_body_condition ~ Treatment + avg_age + days_resample + Year + (1|Nest),
-                  data = malarone.data)
+                            data = malarone.data)
 
 ## Summarise model
 ## -----------------------------------------------------------------------------
@@ -461,7 +461,7 @@ pred.bci <- pred.bci %>%
 ## 2.) indicate significant differences based on tukey contrasts
 ## 3.) Jitter not fitting as corrected for considerable among-year variation
 ## -----------------------------------------------------------------------------
- g1_pred_delta <- ggplot(pred.bci, aes(x = x, y = predicted, color=x, fill=x)) +
+g1_pred_delta <- ggplot(pred.bci, aes(x = x, y = predicted, color=x, fill=x)) +
   # geom_hline(yintercept = mean(pred.bci$predicted, na.rm = T), linetype = "dashed") + 
   labs(x = "Treatment", y = "\U0394 body condition\n(z-transformed)") + 
   scale_fill_manual(values=c("#1F78B4",  "#FF7F00", "#33A02C"), labels = c("control","Malarone®","water")) +
@@ -528,7 +528,7 @@ performance::model_performance(lmer_gr_treat)
 ## Predicted values for each treatment
 ## -----------------------------------------------------------------------------
 mod_gr <- get_model_data(lmer_gr_treat,type='pred',terms="Treatment") %>% 
-   mutate(x = factor(c("control","water","Malarone®"), levels = c("control","water","Malarone®")))
+  mutate(x = factor(c("control","water","Malarone®"), levels = c("control","water","Malarone®")))
 
 ## add sample size to labels
 ## -----------------------------------------------------------------------------
@@ -537,20 +537,20 @@ mod_gr <- mod_gr %>%
   mutate(x = paste0(x,"\nn=",n))
 
 g2_pred <- ggplot(mod_gr, aes(x = x, y = predicted)) +
-    # geom_hline(yintercept = mean(mod_gr$predicted, na.rm = T), linetype = "dashed") +
-    labs(x = "Treatment", y = "growth rate [g/day]\n(z-transformed)") + 
-    geom_errorbar(aes(ymin = conf.low, ymax = conf.high), colour = 'black', size = 1.5, width = .1) + 
-    geom_errorbar(aes(ymin = predicted - std.error , ymax = predicted + std.error),
-                  size = 8, colour = c("#1F78B4", "#33A02C", "#FF7F00"), width = 0) + 
-    geom_point(color = "black", size = 2) + 
-    theme_article(base_size = 12) + 
-    theme(axis.text.x = element_blank(),
-          axis.title=element_text(size= 10),
-          legend.position = "none", 
-          axis.line.x = element_blank(), 
-          axis.ticks.x = element_blank(),
-          plot.margin = margin(0, 0, 0, 0, "cm")) 
-  scale_y_continuous(breaks = seq(0, 0.6, 0.1), limits = c(-0.06, 0.64))
+  # geom_hline(yintercept = mean(mod_gr$predicted, na.rm = T), linetype = "dashed") +
+  labs(x = "Treatment", y = "growth rate [g/day]\n(z-transformed)") + 
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), colour = 'black', size = 1.5, width = .1) + 
+  geom_errorbar(aes(ymin = predicted - std.error , ymax = predicted + std.error),
+                size = 8, colour = c("#1F78B4", "#33A02C", "#FF7F00"), width = 0) + 
+  geom_point(color = "black", size = 2) + 
+  theme_article(base_size = 12) + 
+  theme(axis.text.x = element_blank(),
+        axis.title=element_text(size= 10),
+        legend.position = "none", 
+        axis.line.x = element_blank(), 
+        axis.ticks.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "cm")) 
+scale_y_continuous(breaks = seq(0, 0.6, 0.1), limits = c(-0.06, 0.64))
 ```
 
 ### `Bloodchemistry`
@@ -569,7 +569,7 @@ means <- bloodchem.data %>%
             UCL = quantile(Age, 0.975))
 A <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
     legend.position = "none",
@@ -584,8 +584,8 @@ A <-
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = Age),
               height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data,
-            aes(y = Age, group = Ring), col = "Black", lty = "dotted") +
+  # geom_line(data = bloodchem.data,
+  #           aes(y = Age, group = Ring), col = "Black", lty = "dotted") +
   labs(tag = "A") +
   scale_y_continuous(breaks = seq(15, 40, 5)) +
   ylab("Nestling age\n(days)")
@@ -600,7 +600,7 @@ means <- bloodchem.data %>%
             UCL = quantile(BCI, 0.975))
 B <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
     legend.position = "none",
@@ -614,8 +614,8 @@ B <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = BCI), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = BCI, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "B") +
+  # geom_line(data = bloodchem.data, aes(y = BCI, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "B", subtitle = "ns") +
   scale_y_continuous(breaks = seq(-100, 200, 50)) +
   ylab("Body condition index\n")
 
@@ -657,7 +657,7 @@ means <- bloodchem.data %>%
             UCL = quantile(AP, 0.975))
 C <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
     legend.position = "none",
@@ -671,8 +671,8 @@ C <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = AP), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = AP, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "C") +
+  # geom_line(data = bloodchem.data, aes(y = AP, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "C", subtitle = "ns") +
   ylab("AP\n(U/I)")
 
 ## D: AST
@@ -685,7 +685,7 @@ means <- bloodchem.data %>%
             UCL = quantile(AST, 0.975))
 D <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
     legend.position = "none",
@@ -699,8 +699,8 @@ D <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = AST), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = AST, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "D") +
+  # geom_line(data = bloodchem.data, aes(y = AST, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "D", subtitle = "ns") +
   ylab("AST\n(U/I)")
 
 
@@ -714,7 +714,7 @@ means <- bloodchem.data %>%
             UCL = quantile(GGT, 0.975))
 E <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
     legend.position = "none",
@@ -728,8 +728,8 @@ E <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = GGT), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = GGT, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "E") +
+  # geom_line(data = bloodchem.data, aes(y = GGT, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "E", subtitle = "ns") +
   ylab("GGT\n(U/I)")
 
 ## F: BuChE
@@ -742,7 +742,7 @@ means <- bloodchem.data %>%
             UCL = quantile(BuChE, 0.975))
 F <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
     legend.position = "none",
@@ -756,8 +756,8 @@ F <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = BuChE), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = BuChE, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "F") +
+  # geom_line(data = bloodchem.data, aes(y = BuChE, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "F", subtitle = "ns") +
   ylab("BuChE\n(KU/I)")
 
 ## G: BA
@@ -770,13 +770,14 @@ means <- bloodchem.data %>%
             UCL = quantile(BA, 0.975))
 G <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
     legend.position = "none",
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
-    axis.title.x = element_blank()) +
+    axis.title.x = element_blank(),
+    plot.margin = unit(c(0,-0.2,0,0),"cm")) +
   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
@@ -784,8 +785,8 @@ G <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = BA), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = BA, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "G") +
+  # geom_line(data = bloodchem.data, aes(y = BA, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "G", subtitle = "ns") +
   ylab("BA\n(µmol/L)")
 
 ## H: LDH
@@ -798,13 +799,14 @@ means <- bloodchem.data %>%
             UCL = quantile(LDH, 0.975))
 H <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
     legend.position = "none",
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
-    axis.title.x = element_blank()) +
+    axis.title.x = element_blank(),
+    plot.margin = unit(c(0,-0.2,0,0),"cm")) +
   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
@@ -812,8 +814,8 @@ H <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = LDH), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = LDH, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "H") +
+  # geom_line(data = bloodchem.data, aes(y = LDH, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "H", subtitle = "ns") +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   ylab("LDH\n(U/I)")
 
@@ -827,11 +829,15 @@ means <- bloodchem.data %>%
             UCL = quantile(CK, 0.975))
 I <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
     legend.position = "none",
-    axis.title.x = element_blank()) +
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    #axis.text.x = element_text(angle=45, vjust=0.65, hjust=0.9)
+  ) +
   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
@@ -839,9 +845,9 @@ I <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = CK), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = CK, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "I") +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  # geom_line(data = bloodchem.data, aes(y = CK, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "I", subtitle = "ns") +
+  # scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   ylab("CK\n(U/I)")
 
 ## J: ALB
@@ -854,11 +860,15 @@ means <- bloodchem.data %>%
             UCL = quantile(ALB, 0.975))
 J <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
-        legend.position = "none",
-        axis.title.x = element_blank()) +
+    legend.position = "none",
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    #    axis.text.x = element_text(angle=45, vjust=0.65, hjust=0.9)
+  ) +
   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
@@ -866,9 +876,9 @@ J <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = ALB), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = ALB, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "J") +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  # geom_line(data = bloodchem.data, aes(y = ALB, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "J", subtitle = "ns") +
+  # scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   ylab("ALB\n(g/L)")
 
 ## K: TP
@@ -879,13 +889,22 @@ means <- bloodchem.data %>%
             SD = sd(TP),
             LCL = quantile(TP, 0.025),
             UCL = quantile(TP, 0.975))
+
 K <-
   ggplot(means, aes(x = Treatment, y = MEAN)) +
-  theme_article(base_size = 10) +
+  theme_article(base_size = 8) +
   theme(
     aspect.ratio = 1,
-    legend.position = "none",
-    axis.title.x = element_blank()) +
+    legend.position = c(2,0.5),
+    legend.title = element_text(size=8),
+    legend.text = element_text(size=8),
+    legend.key.height = unit(0.05, 'cm'),
+    legend.key.width = unit(0.05, 'cm'),
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    #axis.text.x = element_text(angle=45, vjust=0.65, hjust=0.9)
+    ) +
   scale_color_manual(values = c("#A6CEE3", "#1F78B4", "#FDBF6F", "#FF7F00")) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
@@ -893,9 +912,10 @@ K <-
                 width = 0, size = 8) +
   geom_point(size = 2) +
   geom_jitter(data = bloodchem.data, aes(y = TP), height = 0, size = 0.8, alpha = .6, width = .2, shape = 1) +  
-  geom_line(data = bloodchem.data, aes(y = TP, group = Ring), col = "Black", lty = "dotted") +
-  labs(tag = "K") +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  # geom_line(data = bloodchem.data, aes(y = TP, group = Ring), col = "Black", lty = "dotted") +
+  labs(tag = "K", subtitle = "ns") +
+  guides(color=guide_legend(ncol=2))+
+  # scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   ylab("TP\n(g/L)")
 ```
 
@@ -985,9 +1005,12 @@ ggsave(filename = "figures/MalaroneMultiplot.png", device = "png", dpi = 300,
 
 ## Bloodchemistry data
 ## -----------------------------------------------------------------------------
-A + B + C + D + E + F + G + H + I + J + K + plot_spacer() +  plot_layout(ncol = 3)
+A + B + C + D + E + F + G + H + I + J + K + plot_spacer() + plot_layout(ncol = 3) 
+
 ggsave(filename = "figures/BloodChemistryMultiplot.png", device = "png", dpi = 300,
        width = 9, height = 6, units = "in")
+
+## Leveling up graph J + K done with photoshop... - I tried with inset_element() but couldn't get a handle on it 
 ```
 
 ### Supplementary analses
@@ -1031,7 +1054,7 @@ ggsave(filename = "figures/BodyCondition_Dose.png", device = "png", dpi = 300,
 
 ```{r}
 lmer_gr_treat.mal <- lmerTest::lmer(growth_rate ~ dose + avg_age + days_resample + Sex + Year + (1|Nest),
-                                data = filter(malarone.data, Treatment == "Malarone®"))
+                                    data = filter(malarone.data, Treatment == "Malarone®"))
 
 ## Summarise model
 ## -----------------------------------------------------------------------------
@@ -1079,17 +1102,17 @@ means <- newdata %>%
             UCL = quantile(AP, 0.975))
 
 g1=ggplot(means)+aes(x = dosage_grp, y = MEAN)+
-      scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
-      labs(y="AP")+
-      geom_errorbar(aes(ymin = LCL, ymax = UCL),
+  scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
+  labs(y="AP")+
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
-      geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
+  geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
                 width = 0, size = 8) +
-      geom_point(size=2)+
-      geom_jitter(data = newdata, aes(y = AP), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
-      theme_article(base_size = 10) +
-      theme(legend.position = "none",
-          axis.title.x = element_blank(), axis.text.x = element_blank())
+  geom_point(size=2)+
+  geom_jitter(data = newdata, aes(y = AP), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
+  theme_article(base_size = 8) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(), axis.text.x = element_blank())
 
 ## B: AST
 ## -----------------------------------------------------------------------------
@@ -1102,17 +1125,17 @@ means <- newdata %>%
             UCL = quantile(AST, 0.975))
 
 g2=ggplot(means)+aes(x = dosage_grp, y = MEAN)+
-      scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
-      labs(y="AST")+
-      geom_errorbar(aes(ymin = LCL, ymax = UCL),
+  scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
+  labs(y="AST")+
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
-      geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
+  geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
                 width = 0, size = 8) +
-      geom_point(size=2)+
-      geom_jitter(data = newdata, aes(y = AST), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
-      theme_article(base_size = 10) +
-      theme(legend.position = "none",
-          axis.title.x = element_blank(), axis.text.x = element_blank())
+  geom_point(size=2)+
+  geom_jitter(data = newdata, aes(y = AST), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
+  theme_article(base_size = 8) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(), axis.text.x = element_blank())
 
 ## C: GGT
 ## -----------------------------------------------------------------------------
@@ -1125,17 +1148,17 @@ means <- newdata %>%
             UCL = quantile(GGT, 0.975))
 
 g3=ggplot(means)+aes(x = dosage_grp, y = MEAN)+
-      scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
-      labs(y="GGT")+
-      geom_errorbar(aes(ymin = LCL, ymax = UCL),
+  scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
+  labs(y="GGT")+
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
-      geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
+  geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
                 width = 0, size = 8) +
-      geom_point(size=2)+
-      geom_jitter(data = newdata, aes(y = GGT), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
-      theme_article(base_size = 10) +
-      theme(legend.position = "none",
-          axis.title.x = element_blank(), axis.text.x = element_blank())
+  geom_point(size=2)+
+  geom_jitter(data = newdata, aes(y = GGT), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
+  theme_article(base_size = 8) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(), axis.text.x = element_blank())
 
 ## D: BuChE
 ## -----------------------------------------------------------------------------
@@ -1148,17 +1171,17 @@ means <- newdata %>%
             UCL = quantile(BuChE, 0.975))
 
 g4=ggplot(means)+aes(x = dosage_grp, y = MEAN)+
-      scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
-      labs(y="BuChE")+
-      geom_errorbar(aes(ymin = LCL, ymax = UCL),
+  scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
+  labs(y="BuChE")+
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
-      geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
+  geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
                 width = 0, size = 8) +
-      geom_point(size=2)+
-      geom_jitter(data = newdata, aes(y = BuChE), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
-      theme_article(base_size = 10) +
-      theme(legend.position = "none",
-          axis.title.x = element_blank(), axis.text.x = element_blank())
+  geom_point(size=2)+
+  geom_jitter(data = newdata, aes(y = BuChE), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
+  theme_article(base_size = 8) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(), axis.text.x = element_blank())
 
 
 ## F: BA
@@ -1172,17 +1195,17 @@ means <- newdata %>%
             UCL = quantile(BA, 0.975))
 
 g6=ggplot(means)+aes(x = dosage_grp, y = MEAN)+
-      scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
-      labs(y="BA")+
-      geom_errorbar(aes(ymin = LCL, ymax = UCL),
+  scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
+  labs(y="BA")+
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
-      geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
+  geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
                 width = 0, size = 8) +
-      geom_point(size=2)+
-      geom_jitter(data = newdata, aes(y = BA), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
-      theme_article(base_size = 10) +
-      theme(legend.position = "none",
-          axis.title.x = element_blank(), axis.text.x = element_blank())
+  geom_point(size=2)+
+  geom_jitter(data = newdata, aes(y = BA), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
+  theme_article(base_size = 8) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(), axis.text.x = element_blank())
 
 ## H: LDH
 ## -----------------------------------------------------------------------------
@@ -1194,17 +1217,17 @@ means <- newdata %>%
             UCL = quantile(LDH, 0.975))
 
 g7=ggplot(means)+aes(x = dosage_grp, y = MEAN)+
-      scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
-      labs(y="LDH")+
-      geom_errorbar(aes(ymin = LCL, ymax = UCL),
+  scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
+  labs(y="LDH")+
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
-      geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
+  geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
                 width = 0, size = 8) +
-      geom_point(size=2)+
-      geom_jitter(data = newdata, aes(y = LDH), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
-      theme_article(base_size = 10) +
-      theme(legend.position = "none",
-          axis.title.x = element_blank(), axis.text.x = element_blank())
+  geom_point(size=2)+
+  geom_jitter(data = newdata, aes(y = LDH), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
+  theme_article(base_size = 8) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(), axis.text.x = element_blank())
 
 ## I: CK
 ## -----------------------------------------------------------------------------
@@ -1217,17 +1240,17 @@ means <- newdata %>%
             UCL = quantile(CK, 0.975))
 
 g8=ggplot(means)+aes(x = dosage_grp, y = MEAN)+
-      scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
-      labs(y="CK")+
-      geom_errorbar(aes(ymin = LCL, ymax = UCL),
+  scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
+  labs(y="CK")+
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
-      geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
+  geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
                 width = 0, size = 8) +
-      geom_point(size=2)+
-      geom_jitter(data = newdata, aes(y = CK), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
-      theme_article(base_size = 10) +
-      theme(legend.position = "none",
-          axis.title.x = element_blank(), axis.text.x = element_text(angle = 30, vjust = -0.00001))
+  geom_point(size=2)+
+  geom_jitter(data = newdata, aes(y = CK), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
+  theme_article(base_size = 8) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(), axis.text.x = element_text(angle = 30, vjust = -0.00001))
 
 ## J: ALB
 ## -----------------------------------------------------------------------------
@@ -1240,17 +1263,17 @@ means <- newdata %>%
             UCL = quantile(ALB, 0.975))
 
 g9=ggplot(means)+aes(x = dosage_grp, y = MEAN)+
-      scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
-      labs(y="ALB")+
-      geom_errorbar(aes(ymin = LCL, ymax = UCL),
+  scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
+  labs(y="ALB")+
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
-      geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
+  geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
                 width = 0, size = 8) +
-      geom_point(size=2)+
-      geom_jitter(data = newdata, aes(y = ALB), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
-      theme_article(base_size = 10) +
-      theme(legend.position = "none",
-          axis.title.x = element_blank(), axis.text.x = element_text(angle = 30, vjust = -0.00001))
+  geom_point(size=2)+
+  geom_jitter(data = newdata, aes(y = ALB), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
+  theme_article(base_size = 8) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(), axis.text.x = element_text(angle = 30, vjust = -0.00001))
 
 ## K: TP
 ## -----------------------------------------------------------------------------
@@ -1263,17 +1286,17 @@ means <- newdata %>%
             UCL = quantile(TP, 0.975))
 
 g10=ggplot(means)+aes(x = dosage_grp, y = MEAN)+
-      scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
-      labs(y="TP")+
-      geom_errorbar(aes(ymin = LCL, ymax = UCL),
+  scale_color_manual(values = c("#FDBF6F", "#FF7F00","#1F78B4"))+ 
+  labs(y="TP")+
+  geom_errorbar(aes(ymin = LCL, ymax = UCL),
                 width = 0.1, size = 1) +
-      geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
+  geom_errorbar(aes(col = dosage_grp, ymin = MEAN - SD, ymax = MEAN + SD),
                 width = 0, size = 8) +
-      geom_point(size=2)+
-      geom_jitter(data = newdata, aes(y = TP), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
-      theme_article(base_size = 10) +
-      theme(legend.position = "none",
-          axis.title.x = element_blank(), axis.text.x = element_text(angle = 30, vjust = -0.00001))
+  geom_point(size=2)+
+  geom_jitter(data = newdata, aes(y = TP), height = 0, size = 2, alpha = .6, width = .2, shape = 1) +
+  theme_article(base_size = 8) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(), axis.text.x = element_text(angle = 30, vjust = -0.00001))
 
 ```
 
